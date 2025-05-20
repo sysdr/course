@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UDP Log Server Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .panel { background: #f5f5f5; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+        h1, h2 { color: #333; }
+        .stats { display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .stat-box { flex: 1; min-width: 200px; margin: 10px; padding: 15px; background: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .error-logs { background: white; border-radius: 5px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .error-log { margin-bottom: 10px; padding: 10px; background: #ffebe6; border-left: 4px solid #ff3e1d; }
+        .log-count { font-size: 32px; font-weight: bold; }
+        .log-rate { font-size: 24px; color: #0066cc; }
+        #level-chart { height: 300px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>UDP Log Server Dashboard</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <h2>Log Count</h2>
+                <div class="log-count" id="log-count">0</div>
+            </div>
+            <div class="stat-box">
+                <h2>Current Rate</h2>
+                <div class="log-rate" id="log-rate">0 logs/sec</div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>Log Level Distribution</h2>
+            <canvas id="level-chart"></canvas>
+        </div>
+        
+        <div class="panel">
+            <h2>Recent ERROR Logs</h2>
+            <div class="error-logs" id="error-logs">
+                <div class="error-log">No ERROR logs yet</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize chart
+        const ctx = document.getElementById('level-chart').getContext('2d');
+        const levelChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Count',
+                    data: [],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',  // INFO
+                        'rgba(255, 206, 86, 0.6)',  // WARNING
+                        'rgba(255, 99, 132, 0.6)',  // ERROR
+                        'rgba(54, 162, 235, 0.6)'   // DEBUG
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Update data every second
+        setInterval(async () => {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+            
+            // Update log count
+            document.getElementById('log-count').textContent = data.log_count;
+            
+            // Update log rate
+            document.getElementById('log-rate').textContent = 
+                `${data.current_rate.toFixed(2)} logs/sec`;
+            
+            // Update level chart
+            const levels = Object.keys(data.level_distribution);
+            const counts = levels.map(level => data.level_distribution[level]);
+            
+            levelChart.data.labels = levels;
+            levelChart.data.datasets[0].data = counts;
+            levelChart.update();
+            
+            // Update error logs
+            const errorLogsContainer = document.getElementById('error-logs');
+            if (data.error_logs.length > 0) {
+                errorLogsContainer.innerHTML = '';
+                data.error_logs.forEach(log => {
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'error-log';
+                    logDiv.innerHTML = `
+                        <strong>Time:</strong> ${new Date(log.timestamp).toLocaleTimeString()}<br>
+                        <strong>App:</strong> ${log.app}<br>
+                        <strong>Host:</strong> ${log.host}<br>
+                        <strong>Message:</strong> ${log.message}
+                    `;
+                    errorLogsContainer.appendChild(logDiv);
+                });
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+    
