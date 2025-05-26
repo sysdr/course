@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "System Metrics Schema",
+  "description": "Schema for system performance and health metrics",
+  "type": "object",
+  "required": ["timestamp", "metric_name", "value", "source"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the metric was recorded"
+    },
+    "metric_name": {
+      "type": "string",
+      "enum": [
+        "cpu_usage_percent",
+        "memory_usage_percent", 
+        "disk_usage_percent",
+        "network_bytes_in",
+        "network_bytes_out",
+        "response_time_ms",
+        "error_rate_percent",
+        "throughput_requests_per_second",
+        "active_connections",
+        "queue_depth"
+      ],
+      "description": "Type of metric being recorded"
+    },
+    "value": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Numeric value of the metric"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Source service or component that generated this metric"
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["percent", "bytes", "milliseconds", "requests_per_second", "count"],
+      "description": "Unit of measurement for the metric value"
+    },
+    "tags": {
+      "type": "object",
+      "description": "Additional metadata tags for metric categorization",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "threshold": {
+      "type": "object",
+      "description": "Alert thresholds for this metric",
+      "properties": {
+        "warning": {"type": "number"},
+        "critical": {"type": "number"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

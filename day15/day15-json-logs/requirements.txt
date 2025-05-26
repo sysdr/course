@@ -1,0 +1,7 @@
+# Core dependencies for JSON processing
+jsonschema==4.17.3  # Schema validation library
+flask==2.3.3        # Web framework for frontend
+requests==2.31.0    # HTTP client for testing
+pytest==7.4.0       # Testing framework
+colorama==0.4.6     # Colored console output
+websockets==11.0.3  # Real-time web communication
