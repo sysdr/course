@@ -1,0 +1,10 @@
+query:
+  build:
+    context: ./query
+  volumes:
+    - storage-data:/data/storage
+  ports:
+    - "8000:8000"
+  depends_on:
+    - storage
+  command: python web_interface.py

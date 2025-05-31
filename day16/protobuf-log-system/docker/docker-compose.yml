@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  protobuf-log-system:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../src:/app/src
+      - ../proto:/app/proto
+      - ../web:/app/web
+    environment:
+      - FLASK_ENV=development
+      - PYTHONPATH=/app/src:/app/proto
+    command: python web/log_viewer.py
+
+  test-runner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../src:/app/src
+      - ../proto:/app/proto
+      - ../tests:/app/tests
+    environment:
+      - PYTHONPATH=/app/src:/app/proto
+    command: python -m pytest tests/ -v --cov=src
+    profiles:
+      - testing

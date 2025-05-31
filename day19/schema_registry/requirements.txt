@@ -1,0 +1,4 @@
+Flask==3.0.2
+jsonschema==4.21.1
+requests==2.31.0
+pytest==8.0.2
