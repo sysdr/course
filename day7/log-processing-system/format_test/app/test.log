@@ -1,0 +1,5 @@
+[18/May/2025:15:29:19 +0000] DEBUG [inventory] Order created
+[18/May/2025:15:29:20 +0000] DEBUG [inventory] Service started
+[18/May/2025:15:29:21 +0000] ERROR [payment] Cache miss
+[18/May/2025:15:29:22 +0000] WARNING [payment] Order created
+[18/May/2025:15:29:24 +0000] CRITICAL [notification] Service stopped

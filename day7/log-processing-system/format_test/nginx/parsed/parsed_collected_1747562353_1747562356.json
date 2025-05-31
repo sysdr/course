@@ -1,0 +1,57 @@
+[
+  {
+    "timestamp": "18/May/2025:15:29:08 +0000",
+    "level": "CRITICAL",
+    "process": "worker2",
+    "message": "Failed to connect to database",
+    "raw": "18/May/2025:15:29:08 +0000 [CRITICAL] worker2: Failed to connect to database",
+    "parsed_at": "2025-05-18T15:29:16.947851",
+    "format": "nginx",
+    "line_number": 1,
+    "source_file": "collected_1747562353.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:09 +0000",
+    "level": "INFO",
+    "process": "worker1",
+    "message": "Connection timeout",
+    "raw": "18/May/2025:15:29:09 +0000 [INFO] worker1: Connection timeout",
+    "parsed_at": "2025-05-18T15:29:16.947868",
+    "format": "nginx",
+    "line_number": 2,
+    "source_file": "collected_1747562353.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:10 +0000",
+    "level": "DEBUG",
+    "process": "worker3",
+    "message": "Payment processed",
+    "raw": "18/May/2025:15:29:10 +0000 [DEBUG] worker3: Payment processed",
+    "parsed_at": "2025-05-18T15:29:16.947873",
+    "format": "nginx",
+    "line_number": 3,
+    "source_file": "collected_1747562353.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:11 +0000",
+    "level": "CRITICAL",
+    "process": "worker3",
+    "message": "Cache miss",
+    "raw": "18/May/2025:15:29:11 +0000 [CRITICAL] worker3: Cache miss",
+    "parsed_at": "2025-05-18T15:29:16.947877",
+    "format": "nginx",
+    "line_number": 4,
+    "source_file": "collected_1747562353.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:12 +0000",
+    "level": "WARNING",
+    "process": "worker2",
+    "message": "Failed to connect to database",
+    "raw": "18/May/2025:15:29:12 +0000 [WARNING] worker2: Failed to connect to database",
+    "parsed_at": "2025-05-18T15:29:16.947880",
+    "format": "nginx",
+    "line_number": 5,
+    "source_file": "collected_1747562353.log"
+  }
+]

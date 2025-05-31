@@ -1,0 +1,28 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8443,
+    "max_connections": 100,
+    "connection_timeout": 30,
+    "buffer_size": 4096
+  },
+  "ssl": {
+    "cert_file": "certs/server.crt",
+    "key_file": "certs/server.key",
+    "min_tls_version": "TLSv1.2",
+    "ciphers": "ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20:!aNULL:!MD5:!DSS"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "rotation": {
+      "enabled": true,
+      "max_size_mb": 100,
+      "backup_count": 5
+    }
+  },
+  "monitoring": {
+    "metrics_enabled": true,
+    "health_check_interval": 30
+  }
+}

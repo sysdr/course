@@ -1,0 +1,21 @@
+# Test Pipeline Configuration
+directories:
+  - pipeline_test/logs
+  - pipeline_test/collected
+  - pipeline_test/parsed
+  - pipeline_test/storage/index
+  - pipeline_test/storage/active
+  - pipeline_test/storage/archive
+
+components:
+  - name: generator
+    command: python generator/generator.py --format apache --rate 2 --output pipeline_test/logs/test.log
+  
+  - name: collector
+    command: python collector/collector.py --source pipeline_test/logs/test.log --output-dir pipeline_test/collected --interval 1
+  
+  - name: parser
+    command: python parser/parser.py --input-dir pipeline_test/collected --output-dir pipeline_test/parsed --format apache --interval 1
+  
+  - name: storage
+    command: python storage/storage.py --input-dir pipeline_test/parsed --storage-dir pipeline_test/storage --rotation-size 1 --rotation-hours 1 --interval 1

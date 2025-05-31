@@ -1,0 +1,6 @@
+{"level":"INFO","message":"User authentication successful","source":"tls_log_client_py313","timestamp":1748004434.014178,"client_ip":"127.0.0.1","compression_ratio":0.28}
+{"level":"WARNING","message":"Database connection timeout detected","source":"tls_log_client_py313","timestamp":1748004434.019395,"client_ip":"127.0.0.1","compression_ratio":0.22789115646258506}
+{"level":"INFO","message":"Payment processing completed successfully","source":"tls_log_client_py313","timestamp":1748004434.0216792,"client_ip":"127.0.0.1","compression_ratio":0.2576687116564417}
+{"level":"INFO","message":"User authentication successful","source":"tls_log_client_py313","timestamp":1748004444.6415172,"client_ip":"127.0.0.1","compression_ratio":0.2790697674418605}
+{"level":"WARNING","message":"Database connection timeout detected","source":"tls_log_client_py313","timestamp":1748004444.644942,"client_ip":"127.0.0.1","compression_ratio":0.22789115646258506}
+{"level":"INFO","message":"Payment processing completed successfully","source":"tls_log_client_py313","timestamp":1748004444.6469388,"client_ip":"127.0.0.1","compression_ratio":0.2668711656441718}

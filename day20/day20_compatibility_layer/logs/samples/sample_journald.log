@@ -1,0 +1,29 @@
+__REALTIME_TIMESTAMP=1697058855123456
+MESSAGE=Authentication failure for user root
+PRIORITY=3
+_PID=1234
+_UID=0
+_GID=0
+_COMM=sshd
+_EXE=/usr/sbin/sshd
+_HOSTNAME=mymachine
+
+__REALTIME_TIMESTAMP=1697058856234567
+MESSAGE=Backup job completed successfully
+PRIORITY=6
+_PID=5678
+_UID=0
+_GID=0
+_COMM=backup.sh
+_EXE=/usr/bin/backup.sh
+_HOSTNAME=mymachine
+
+__REALTIME_TIMESTAMP=1697058857345678
+MESSAGE=Memory usage at 85%
+PRIORITY=4
+_PID=9012
+_UID=0
+_GID=0
+_COMM=systemd
+_EXE=/usr/lib/systemd/systemd
+_HOSTNAME=mymachine

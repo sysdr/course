@@ -1,0 +1,92 @@
+  def start(self) -> None:
+        """Start the TLS log server"""
+        try:
+            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket.bind((self.host, self.port))
+            self.server_socket.listen(10)
+            
+            self.running = True
+            
+            logger.info("TLS Log Server started", 
+                       host=self.host, 
+                       port=self.port,
+                       pid=os.getpid() if 'os' in globals() else 'unknown')
+            
+            while self.running:
+                try:
+                    client_socket, address = self.server_socket.accept()
+                    
+                    # Wrap socket with TLS
+                    tls_socket = self.ssl_context.wrap_socket(
+                        client_socket, 
+                        server_side=True
+                    )
+                    
+                    # Handle client in separate thread
+                    thread = threading.Thread(
+                        target=self.handle_client,
+                        args=(tls_socket, address),
+                        daemon=True
+                    )
+                    thread.start()
+                    
+                except OSError as e:
+                    if self.running:  # Only log if we're not shutting down
+                        logger.error("Socket error in main loop", error=str(e))
+                        
+        except Exception as e:
+            logger.error("Failed to start server", error=str(e))
+            raise
+        finally:
+            self.shutdown()
+    
+    def shutdown(self) -> None:
+        """Gracefully shutdown the server"""
+        if not self.running:
+            return
+            
+        logger.info("Shutting down TLS Log Server...")
+        self.running = False
+        
+        if self.server_socket:
+            try:
+                self.server_socket.close()
+            except:
+                pass
+        
+        # Print final metrics
+        metrics = self.get_metrics()
+        logger.info("Final server metrics", **metrics)
+        
+        print("\n" + "="*50)
+        print("TLS LOG SERVER - SHUTDOWN COMPLETE")
+        print("="*50)
+        print(f"Total Connections: {metrics['total_connections']}")
+        print(f"Total Logs Processed: {metrics['total_logs_processed']}")
+        print(f"Total Bytes Received: {metrics['total_bytes_received']:,}")
+        print(f"Average Compression: {metrics['compression_ratio']:.2%}")
+        print(f"Uptime: {metrics['uptime_seconds']:.1f} seconds")
+        print("="*50)
+
+def main():
+    """Main entry point"""
+    import os
+    
+    # Configuration from environment
+    host = os.getenv('TLS_SERVER_HOST', 'localhost')
+    port = int(os.getenv('TLS_SERVER_PORT', '8443'))
+    
+    # Create and start server
+    server = TLSLogServer(host=host, port=port)
+    
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        logger.info("Received keyboard interrupt")
+    except Exception as e:
+        logger.error("Server failed", error=str(e))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
