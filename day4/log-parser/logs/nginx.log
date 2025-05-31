@@ -1,3 +1,0 @@
-192.168.1.10 - john [28/Jul/2023:10:27:10 +0000] "GET /api/users HTTP/1.1" 404 52 "https://example.com" "Mozilla/5.0"
-192.168.1.11 - jane [28/Jul/2023:10:28:15 +0000] "POST /api/upload HTTP/1.1" 201 0 "https://example.com/form" "Chrome/98.0"
-192.168.1.12 - bob [28/Jul/2023:10:29:20 +0000] "GET /api/products HTTP/1.1" 200 1024 "https://example.com/shop" "Firefox/95.0"

@@ -1,2 +1,0 @@
-# No external dependencies for our simple service yet
-# We'll add more as we expand our distributed system

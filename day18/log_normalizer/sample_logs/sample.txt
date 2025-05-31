@@ -1,3 +1,0 @@
-2024-01-15 10:30:00 ERROR Database connection timeout
-2024-01-15 10:30:01 INFO User login successful
-[2024-01-15T10:30:02] WARN: High memory usage detected
