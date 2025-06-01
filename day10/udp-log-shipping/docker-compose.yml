@@ -1,0 +1,25 @@
+
+services:
+  udp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "9999:9999/udp"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - log-network
+
+  udp-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    depends_on:
+      - udp-server
+    networks:
+      - log-network
+
+networks:
+  log-network:
+    driver: bridge
