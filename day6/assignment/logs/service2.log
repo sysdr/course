@@ -1,0 +1,10 @@
+[2025-05-15 08:14:22] [INFO] Service2 initialized
+[2025-05-15 09:18:45] [DEBUG] Configuration loaded from config.json
+[2025-05-15 10:27:33] [ERROR] Database connection timeout
+[2025-05-15 11:36:12] [WARN] Disk space below 20%
+[2025-05-15 12:42:45] [INFO] User authentication successful: admin123
+[2025-05-15 13:55:18] [ERROR] Database connection timeout
+[2025-05-15 14:22:33] [INFO] Batch job completed successfully
+[2025-05-15 15:37:44] [WARN] Network latency increasing: 350ms
+[2025-05-15 16:44:21] [DEBUG] Cache invalidation triggered
+[2025-05-15 17:51:15] [ERROR] Failed to process payment for order #38921

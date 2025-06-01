@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+ log-parser-demo:
+   build:
+     context: .
+     dockerfile: Dockerfile
+   volumes:
+     - ./logs:/logs
+
+ log-processing-service:
+   build:
+     context: .
+     dockerfile: Dockerfile.service
+   volumes:
+     - ./logs:/logs
