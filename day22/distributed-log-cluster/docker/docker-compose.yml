@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  node1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ID=storage_node_1
+      - NODE_PORT=5001
+      - STORAGE_PATH=/app/logs/node1
+    volumes:
+      - node1_data:/app/logs/node1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  node2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - NODE_ID=storage_node_2
+      - NODE_PORT=5002
+      - STORAGE_PATH=/app/logs/node2
+    volumes:
+      - node2_data:/app/logs/node2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+
+  node3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      - NODE_ID=storage_node_3
+      - NODE_PORT=5003
+      - STORAGE_PATH=/app/logs/node3
+    volumes:
+      - node3_data:/app/logs/node3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+
+volumes:
+  node1_data:
+  node2_data:
+  node3_data:
