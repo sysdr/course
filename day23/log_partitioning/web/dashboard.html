@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Log Partitioning Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric { display: inline-block; margin: 10px 20px; text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #4CAF50; }
+        .metric-label { color: #666; }
+        .partition { padding: 10px; margin: 5px; background: #e3f2fd; border-left: 4px solid #2196F3; }
+        .chart { height: 200px; background: #f9f9f9; border: 1px solid #ddd; display: flex; align-items: end; padding: 10px; }
+        .bar { background: #4CAF50; margin: 2px; color: white; text-align: center; display: flex; align-items: end; justify-content: center; min-width: 60px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ Log Partitioning Dashboard</h1>
+        
+        <div class="card">
+            <h2>System Overview</h2>
+            <div class="metric">
+                <div class="metric-value" id="totalLogs">0</div>
+                <div class="metric-label">Total Logs</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="totalPartitions">3</div>
+                <div class="metric-label">Active Partitions</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="queryImprovement">0x</div>
+                <div class="metric-label">Query Improvement</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Partition Distribution</h2>
+            <div class="chart" id="partitionChart">
+                <div class="bar" style="height: 60%">Node 1<br>340</div>
+                <div class="bar" style="height: 80%">Node 2<br>450</div>
+                <div class="bar" style="height: 40%">Node 3<br>210</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Partition Details</h2>
+            <div id="partitionDetails">
+                <div class="partition">
+                    <strong>node_1</strong> - 340 logs<br>
+                    Sources: web_server, database<br>
+                    Last Updated: 2 minutes ago
+                </div>
+                <div class="partition">
+                    <strong>node_2</strong> - 450 logs<br>
+                    Sources: auth_service, api_gateway<br>
+                    Last Updated: 1 minute ago
+                </div>
+                <div class="partition">
+                    <strong>node_3</strong> - 210 logs<br>
+                    Sources: cache<br>
+                    Last Updated: 30 seconds ago
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Query Performance</h2>
+            <p><strong>Last Query:</strong> source='web_server'</p>
+            <p><strong>Partitions Queried:</strong> 1 of 3 (33% efficiency)</p>
+            <p><strong>Execution Time:</strong> 0.045s (estimated 0.135s without partitioning)</p>
+            <p><strong>Performance Gain:</strong> 3.0x faster</p>
+        </div>
+    </div>
+
+    <script>
+        // Simulate real-time updates
+        function updateMetrics() {
+            const totalLogs = Math.floor(Math.random() * 1000) + 500;
+            document.getElementById('totalLogs').textContent = totalLogs;
+            
+            const improvement = (Math.random() * 5 + 2).toFixed(1);
+            document.getElementById('queryImprovement').textContent = improvement + 'x';
+        }
+
+        setInterval(updateMetrics, 3000);
+        updateMetrics();
+    </script>
+</body>
+</html>
