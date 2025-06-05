@@ -1,0 +1,44 @@
+{
+  "type": "record",
+  "name": "LogEvent",
+  "namespace": "com.logsystem.events",
+  "doc": "Enhanced log event with tracking - Version 2",
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "string",
+      "doc": "ISO 8601 timestamp when the event occurred"
+    },
+    {
+      "name": "level",
+      "type": {
+        "type": "enum",
+        "name": "LogLevel", 
+        "symbols": ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+      },
+      "doc": "Severity level of the log event"
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "doc": "Human-readable log message"
+    },
+    {
+      "name": "service_name",
+      "type": "string",
+      "doc": "Name of the service generating the log"
+    },
+    {
+      "name": "request_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Unique identifier for the request (added in v2)"
+    },
+    {
+      "name": "user_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Identifier of the user associated with this event (added in v2)"
+    }
+  ]
+}

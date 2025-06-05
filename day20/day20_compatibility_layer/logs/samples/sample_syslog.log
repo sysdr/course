@@ -1,0 +1,8 @@
+<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8
+<13>Oct 11 22:14:15 mymachine auth: authentication failure; logname= uid=500 euid=0 tty=pts/8 ruser=lonvick rhost=192.168.1.100 user=root
+<85>Oct 11 22:14:15 mymachine cron[1234]: (root) CMD (/usr/bin/backup.sh)
+<30>Oct 11 22:14:16 mymachine kernel: TCP: time wait bucket table overflow
+<166>Oct 11 22:14:16 mymachine postfix/smtp[5678]: connect to example.com[192.168.1.200]:25: Connection refused
+<38>Oct 11 22:14:17 mymachine sshd[9012]: Accepted publickey for user1 from 192.168.1.50 port 54321 ssh2
+<134>Oct 11 22:14:18 mymachine httpd: 192.168.1.75 - - [11/Oct/2023:22:14:18 +0000] "GET /index.html HTTP/1.1" 200 1234
+<29>Oct 11 22:14:19 mymachine systemd[1]: Started Daily apt download activities

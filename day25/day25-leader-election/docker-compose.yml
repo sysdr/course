@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  node-1:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - NODE_ID=node-1
+      - NODE_PORT=8001
+    volumes:
+      - ./logs:/app/logs
+    
+  node-2:
+    build: .
+    ports:
+      - "8002:8002"
+    environment:
+      - NODE_ID=node-2
+      - NODE_PORT=8002
+    volumes:
+      - ./logs:/app/logs
+      
+  node-3:
+    build: .
+    ports:
+      - "8003:8003"
+    environment:
+      - NODE_ID=node-3
+      - NODE_PORT=8003
+    volumes:
+      - ./logs:/app/logs
+
+  web-demo:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html
+    depends_on:
+      - node-1
+      - node-2
+      - node-3

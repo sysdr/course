@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  log-enrichment:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=docker
+      - SERVICE_NAME=log-enrichment-pipeline
+      - SERVICE_VERSION=1.0.0
+      - REGION=local
+    volumes:
+      - ./config:/app/config:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Add a simple log generator for testing
+  log-generator:
+    build: .
+    command: python demo/log_generator.py
+    depends_on:
+      - log-enrichment
+    restart: unless-stopped
+
+volumes:
+  config-data:

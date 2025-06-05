@@ -1,0 +1,5 @@
+2025-05-16 16:12:47 [DEBUG] User logged in
+2025-05-16 16:12:47 [WARNING] Rate limit approaching
+2025-05-16 16:12:47 [WARNING] Slow query performance
+2025-05-16 16:12:47 [DEBUG] Request processed successfully
+2025-05-16 16:12:47 [ERROR] Failed to process request

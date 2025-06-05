@@ -1,0 +1,29 @@
+# Use Python 3.9 slim image as base
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy our log parser files
+COPY ../src/log_parser.py /app/
+COPY ../src/log_processing_service.py /app/
+
+# Install required packages
+RUN pip install watchdog
+
+# Make the script executable
+RUN chmod +x /app/log_processing_service.py
+
+# Create a directory for logs
+RUN mkdir -p /logs
+
+# Set environment variables
+ENV LOG_DIR=/logs
+
+RUN mkdir -p /parsed_logs
+
+# Set environment variables
+ENV PARSED_LOG_DIR=/parsed_logs
+
+# Entry point
+CMD ["python", "log_processing_service.py"]

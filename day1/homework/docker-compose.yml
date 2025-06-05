@@ -1,0 +1,20 @@
+
+services:
+  logger:
+    build:
+      context: ./src/services/logger
+    volumes:
+      - ./src/services/logger:/app
+      - ./logs:/logs  # Mount a volume for persistent logs
+    ports:
+      - "8000:8000"  # Original port
+      - "8080:8080"  # Web interface port
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FREQUENCY=5.0
+      - LOG_TO_FILE=true
+      - LOG_FILE_PATH=/logs/logger.log
+      - LOG_MAX_SIZE_MB=1.0
+      - WEB_HOST=0.0.0.0
+      - WEB_PORT=8080
+      - MAX_LOGS_TO_DISPLAY=100

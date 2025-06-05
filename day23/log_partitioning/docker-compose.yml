@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  log-partitioning:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PARTITION_STRATEGY=source
+      - NODE_COUNT=3
+  
+  web-dashboard:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html

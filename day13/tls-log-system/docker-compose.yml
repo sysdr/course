@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  tls-log-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: tls-log-server
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./logs:/app/logs
+      - ./certs:/app/certs:ro
+      - ./config:/app/config:ro
+    environment:
+      - TLS_SERVER_HOST=0.0.0.0
+      - TLS_SERVER_PORT=8443
+    networks:
+      - tls-log-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(); s.connect(('localhost', 8443)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  tls-log-client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: tls-log-client
+    command: python src/tls_log_client.py batch
+    depends_on:
+      - tls-log-server
+    volumes:
+      - ./certs:/app/certs:ro
+    environment:
+      - TLS_SERVER_HOST=tls-log-server
+      - TLS_SERVER_PORT=8443
+    networks:
+      - tls-log-network
+    restart: "no"
+
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: tls-web-dashboard
+    command: python src/web_dashboard.py
+    ports:
+      - "8080:8080"
+    depends_on:
+      - tls-log-server
+    volumes:
+      - ./logs:/app/logs:ro
+      - ./templates:/app/templates:ro
+    environment:
+      - DASHBOARD_PORT=8080
+    networks:
+      - tls-log-network
+    restart: unless-stopped
+
+networks:
+  tls-log-network:
+    driver: bridge
+    name: tls-log-network

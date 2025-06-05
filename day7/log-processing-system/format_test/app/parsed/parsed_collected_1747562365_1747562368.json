@@ -1,0 +1,57 @@
+[
+  {
+    "timestamp": "18/May/2025:15:29:19 +0000",
+    "level": "DEBUG",
+    "service": "inventory",
+    "message": "Order created",
+    "raw": "[18/May/2025:15:29:19 +0000] DEBUG [inventory] Order created",
+    "parsed_at": "2025-05-18T15:29:28.033401",
+    "format": "app",
+    "line_number": 1,
+    "source_file": "collected_1747562365.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:20 +0000",
+    "level": "DEBUG",
+    "service": "inventory",
+    "message": "Service started",
+    "raw": "[18/May/2025:15:29:20 +0000] DEBUG [inventory] Service started",
+    "parsed_at": "2025-05-18T15:29:28.033416",
+    "format": "app",
+    "line_number": 2,
+    "source_file": "collected_1747562365.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:21 +0000",
+    "level": "ERROR",
+    "service": "payment",
+    "message": "Cache miss",
+    "raw": "[18/May/2025:15:29:21 +0000] ERROR [payment] Cache miss",
+    "parsed_at": "2025-05-18T15:29:28.033420",
+    "format": "app",
+    "line_number": 3,
+    "source_file": "collected_1747562365.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:22 +0000",
+    "level": "WARNING",
+    "service": "payment",
+    "message": "Order created",
+    "raw": "[18/May/2025:15:29:22 +0000] WARNING [payment] Order created",
+    "parsed_at": "2025-05-18T15:29:28.033423",
+    "format": "app",
+    "line_number": 4,
+    "source_file": "collected_1747562365.log"
+  },
+  {
+    "timestamp": "18/May/2025:15:29:24 +0000",
+    "level": "CRITICAL",
+    "service": "notification",
+    "message": "Service stopped",
+    "raw": "[18/May/2025:15:29:24 +0000] CRITICAL [notification] Service stopped",
+    "parsed_at": "2025-05-18T15:29:28.033426",
+    "format": "app",
+    "line_number": 5,
+    "source_file": "collected_1747562365.log"
+  }
+]

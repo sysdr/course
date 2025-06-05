@@ -1,0 +1,11 @@
+[
+  {
+    "id": "log-3",
+    "source": "api-gateway",
+    "level": "DEBUG",
+    "message": "Request processed",
+    "timestamp": 1749004484.5097108,
+    "stored_at": 1749004484.5097334,
+    "node_id": "node-2"
+  }
+]

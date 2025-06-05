@@ -1,0 +1,13 @@
+# Core dependencies for log enrichment pipeline
+flask==2.3.3
+pyyaml==6.0.1
+psutil==5.9.5
+pytest==7.4.2
+pytest-cov==4.1.0
+requests==2.31.0
+python-json-logger==2.0.7
+
+# Development dependencies
+black==23.7.0
+flake8==6.0.0
+mypy==1.5.1

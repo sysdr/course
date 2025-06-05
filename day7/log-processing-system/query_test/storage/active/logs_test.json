@@ -1,0 +1,38 @@
+[
+  {
+    "ip": "192.168.1.1",
+    "timestamp": "18/May/2025:12:00:00 +0000",
+    "endpoint": "users",
+    "status": 200,
+    "size": 1024,
+    "raw": "192.168.1.1 - - [18/May/2025:12:00:00 +0000] \"GET /api/users HTTP/1.1\" 200 1024",
+    "parsed_at": "2025-05-18T12:00:01",
+    "format": "apache",
+    "line_number": 1,
+    "source_file": "test.log"
+  },
+  {
+    "ip": "192.168.1.2",
+    "timestamp": "18/May/2025:12:01:00 +0000",
+    "endpoint": "products",
+    "status": 404,
+    "size": 256,
+    "raw": "192.168.1.2 - - [18/May/2025:12:01:00 +0000] \"GET /api/products HTTP/1.1\" 404 256",
+    "parsed_at": "2025-05-18T12:01:01",
+    "format": "apache",
+    "line_number": 2,
+    "source_file": "test.log"
+  },
+  {
+    "ip": "192.168.1.3",
+    "timestamp": "18/May/2025:12:02:00 +0000",
+    "endpoint": "orders",
+    "status": 500,
+    "size": 512,
+    "raw": "192.168.1.3 - - [18/May/2025:12:02:00 +0000] \"GET /api/orders HTTP/1.1\" 500 512",
+    "parsed_at": "2025-05-18T12:02:01",
+    "format": "apache",
+    "line_number": 3,
+    "source_file": "test.log"
+  }
+]
