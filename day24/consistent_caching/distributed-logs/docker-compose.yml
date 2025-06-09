@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  consistent-hashing:
+    build: .
+    ports:
+      - "8080:8080"
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+      - "9090:9090"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app/src

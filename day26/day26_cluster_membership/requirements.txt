@@ -1,0 +1,14 @@
+# Core dependencies
+aiohttp==3.9.5
+pytest==8.2.0
+pytest-asyncio==0.23.6
+structlog==24.1.0
+websockets==12.0
+prometheus-client==0.20.0
+orjson==3.9.15
+dataclasses-json==0.6.4
+
+# Platform-specific optimizations
+uvloop==0.19.0; platform_system != "Windows"
+uvloop==0.19.0; platform_system == "Linux"
+uvloop==0.19.0; platform_system == "Darwin" and platform_machine == "arm64"

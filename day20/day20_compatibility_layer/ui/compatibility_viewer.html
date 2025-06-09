@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 20: Compatibility Layer Viewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .nav-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .nav-tab.active {
+            color: #2c3e50;
+            border-bottom-color: #3498db;
+            background: white;
+        }
+        
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #2980b9;
+            background: #f8f9fa;
+        }
+        
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
+        .log-viewer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .log-entry.error {
+            border-left-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+        
+        .log-entry.warning {
+            border-left-color: #f39c12;
+            background: rgba(243, 156, 18, 0.1);
+        }
+        
+        .log-entry.info {
+            border-left-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-top: 4px solid #3498db;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+            margin: 5px 0 0 0;
+        }
+        
+        .progress-bar {
+            background: #ecf0f1;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+        
+        .format-chart {
+            margin: 20px 0;
+        }
+        
+        .format-bar {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .format-name {
+            width: 100px;
+            font-weight: bold;
+        }
+        
+        .format-progress {
+            flex: 1;
+            height: 25px;
+            background: #ecf0f1;
+            border-radius: 12px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+        
+        .format-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.5s ease;
+        }
+        
+        .format-count {
+            font-weight: bold;
+            min-width: 50px;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+        }
+        
+        .alert.success {
+            border-left-color: #27ae60;
+            background: #d5f4e6;
+            color: #155724;
+        }
+        
+        .alert.error {
+            border-left-color: #e74c3c;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert.warning {
+            border-left-color: #f39c12;
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Compatibility Layer</h1>
+            <p>Day 20: Universal Log Format Translation System</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('upload')">📁 Upload & Process</button>
+            <button class="nav-tab" onclick="showTab('results')">📊 Results</button>
+            <button class="nav-tab" onclick="showTab('samples')">📋 Sample Data</button>
+            <button class="nav-tab" onclick="showTab('config')">⚙️ Configuration</button>
+        </div>
+        
+        <div class="content">
+            <!-- Upload Tab -->
+            <div id="upload" class="tab-content active">
+                <h2>Upload Log Files</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
+                     ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <p>📁 Drop log files here or click to browse</p>
+                    <p style="color: #666; font-size: 14px;">Supports syslog, journald, and mixed format files</p>
+                    <input type="file" id="fileInput" multiple accept=".log,.txt" style="display: none;" onchange="handleFileSelect(event)">
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn" onclick="processFiles()">🔄 Process Files</button>
+                    <button class="btn btn-success" onclick="loadSampleData()">📋 Load Sample Data</button>
+                    <button class="btn btn-warning" onclick="clearAll()">🗑️ Clear All</button>
+                </div>
+                
+                <div id="uploadStatus" class="alert" style="display: none;"></div>
+                
+                <div id="fileList" style="margin: 20px 0;"></div>
+            </div>
+            
+            <!-- Results Tab -->
+            <div id="results" class="tab-content">
+                <h2>Processing Results</h2>
+                
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalLogs">0</div>
+                        <div class="stat-label">Total Log Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="successRate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="throughput">0</div>
+                        <div class="stat-label">Logs/Second</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="errorCount">0</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                </div>
+                
+                <div class="format-chart">
+                    <h3>Format Distribution</h3>
+                    <div id="formatDistribution"></div>
+                </div>
+                
+                <div>
+                    <h3>Processing Timeline</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>Output Preview</h3>
+                    <div>
+                        <button class="btn" onclick="showOutput('json')">JSON</button>
+                        <button class="btn" onclick="showOutput('structured')">Structured</button>
+                        <button class="btn" onclick="showOutput('simple')">Simple</button>
+                    </div>
+                    <div class="log-viewer" id="outputViewer">
+                        Processing results will appear here...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Samples Tab -->
+            <div id="samples" class="tab-content">
+                <h2>Sample Log Data</h2>
+                
+                <div style="margin: 20px 0;">
+                    <h3>🖥️ Syslog Samples</h3>
+                    <div class="log-viewer" id="syslogSamples">
+                        &lt;34&gt;Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8
+                        &lt;13&gt;Oct 11 22:14:15 mymachine auth: authentication failure; logname= uid=500
+                        &lt;85&gt;Oct 11 22:14:15 mymachine cron[1234]: (root) CMD (/usr/bin/backup.sh)
+                    </div>
+                    
+                    <h3>📖 Journald Samples</h3>
+                    <div class="log-viewer" id="journaldSamples">
+                        __REALTIME_TIMESTAMP=1697058855123456
+                        MESSAGE=Authentication failure for user root
+                        PRIORITY=3
+                        _PID=1234
+                        _COMM=sshd
+                    </div>
+                    
+                    <h3>🔀 Mixed Format Sample</h3>
+                    <div class="log-viewer" id="mixedSamples">
+                        &lt;34&gt;Oct 11 22:14:15 server1 su: authentication failed
+                        __REALTIME_TIMESTAMP=1697058856123456
+                        MESSAGE=Service nginx started
+                        {"timestamp": "2023-10-11T22:14:17Z", "level": "ERROR", "message": "Database connection failed"}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Config Tab -->
+            <div id="config" class="tab-content">
+                <h2>Configuration</h2>
+                
+                <div style="margin: 20px 0;">
+                    <h3>⚙️ Adapter Settings</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="stat-card">
+                            <h4>Syslog Adapter</h4>
+                            <p>• RFC 3164 & RFC 5424 support</p>
+                            <p>• Priority field decoding</p>
+                            <p>• Facility mapping</p>
+                            <p>• Timestamp normalization</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Journald Adapter</h4>
+                            <p>• Key=value parsing</p>
+                            <p>• JSON format support</p>
+                            <p>• Metadata extraction</p>
+                            <p>• Binary format handling</p>
+                        </div>
+                    </div>
+                    
+                    <h3>📋 Unified Schema</h3>
+                    <div class="log-viewer">
+{
+  "required_fields": ["timestamp", "level", "message", "source_format"],
+  "optional_fields": ["facility", "hostname", "process_id", "user_id"],
+  "timestamp_format": "iso8601",
+  "level_mapping": {
+    "EMERGENCY": "CRITICAL",
+    "ALERT": "CRITICAL",
+    "CRITICAL": "CRITICAL",
+    "ERROR": "ERROR",
+    "WARNING": "WARNING",
+    "NOTICE": "INFO",
+    "INFO": "INFO",
+    "DEBUG": "DEBUG"
+  }
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let processedData = null;
+        let uploadedFiles = [];
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.target.closest('.upload-area').classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.target.closest('.upload-area').classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.target.closest('.upload-area').classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        }
+        
+        function addFiles(files) {
+            uploadedFiles = uploadedFiles.concat(files);
+            updateFileList();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+            
+            let html = '<h3>📁 Uploaded Files:</h3>';
+            uploadedFiles.forEach((file, index) => {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; margin: 5px 0; border-radius: 5px;">
+                        <span>${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
+                        <button class="btn btn-danger" onclick="removeFile(${index})" style="padding: 5px 10px; font-size: 12px;">Remove</button>
+                    </div>
+                `;
+            });
+            fileList.innerHTML = html;
+        }
+        
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+        
+        function clearAll() {
+            uploadedFiles = [];
+            processedData = null;
+            updateFileList();
+            showUploadStatus('All files cleared', 'warning');
+            
+            // Reset results
+            document.getElementById('totalLogs').textContent = '0';
+            document.getElementById('successRate').textContent = '0%';
+            document.getElementById('throughput').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('outputViewer').textContent = 'Processing results will appear here...';
+        }
+        
+        function processFiles() {
+            if (uploadedFiles.length === 0) {
+                showUploadStatus('Please upload files first', 'error');
+                return;
+            }
+            
+            showUploadStatus('Processing files...', 'warning');
+            
+            // Simulate processing (in real implementation, this would call the Python backend)
+            setTimeout(() => {
+                const totalLines = Math.floor(Math.random() * 1000) + 100;
+                const successfulLines = Math.floor(totalLines * (0.85 + Math.random() * 0.14));
+                const errors = totalLines - successfulLines;
+                const processingTime = Math.random() * 5 + 1;
+                
+                processedData = {
+                    totalLines,
+                    successfulLines,
+                    errors,
+                    processingTime,
+                    throughput: totalLines / processingTime,
+                    formatDistribution: {
+                        syslog: Math.floor(totalLines * 0.6),
+                        journald: Math.floor(totalLines * 0.3),
+                        json: Math.floor(totalLines * 0.1)
+                    },
+                    sampleOutput: generateSampleOutput()
+                };
+                
+                updateResults();
+                showUploadStatus('Files processed successfully!', 'success');
+                showTab('results');
+            }, 2000);
+        }
+        
+        function loadSampleData() {
+            // Simulate loading sample data
+            showUploadStatus('Loading sample data...', 'warning');
+            
+            setTimeout(() => {
+                processedData = {
+                    totalLines: 247,
+                    successfulLines: 231,
+                    errors: 16,
+                    processingTime: 2.3,
+                    throughput: 107.4,
+                    formatDistribution: {
+                        syslog: 148,
+                        journald: 76,
+                        json: 23
+                    },
+                    sampleOutput: generateSampleOutput()
+                };
+                
+                updateResults();
+                showUploadStatus('Sample data loaded successfully!', 'success');
+                showTab('results');
+            }, 1000);
+        }
+        
+        function updateResults() {
+            if (!processedData) return;
+            
+            const { totalLines, successfulLines, errors, processingTime, throughput, formatDistribution } = processedData;
+            
+            // Update stats
+            document.getElementById('totalLogs').textContent = totalLines.toLocaleString();
+            document.getElementById('successRate').textContent = `${(successfulLines / totalLines * 100).toFixed(1)}%`;
+            document.getElementById('throughput').textContent = throughput.toFixed(1);
+            document.getElementById('errorCount').textContent = errors.toLocaleString();
+            
+            // Update progress bar
+            document.getElementById('progressFill').style.width = `${successfulLines / totalLines * 100}%`;
+            
+            // Update format distribution
+            updateFormatDistribution(formatDistribution, totalLines);
+        }
+        
+        function updateFormatDistribution(distribution, total) {
+            const container = document.getElementById('formatDistribution');
+            const colors = {
+                syslog: '#3498db',
+                journald: '#9b59b6',
+                json: '#27ae60',
+                unknown: '#95a5a6'
+            };
+            
+            let html = '';
+            for (const [format, count] of Object.entries(distribution)) {
+                const percentage = (count / total * 100).toFixed(1);
+                html += `
+                    <div class="format-bar">
+                        <div class="format-name">${format}</div>
+                        <div class="format-progress">
+                            <div class="format-fill" style="width: ${percentage}%; background: ${colors[format] || colors.unknown}"></div>
+                        </div>
+                        <div class="format-count">${count} (${percentage}%)</div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function generateSampleOutput() {
+            return {
+                json: [
+                    '{"timestamp":"2023-10-11T22:14:15+00:00","level":"ERROR","message":"Authentication failed for user root","source_format":"syslog","facility":"auth","hostname":"mymachine"}',
+                    '{"timestamp":"2023-10-11T22:14:16+00:00","level":"INFO","message":"Service nginx started","source_format":"journald","process_id":"1234"}',
+                    '{"timestamp":"2023-10-11T22:14:17+00:00","level":"INFO","message":"Backup job completed successfully","source_format":"syslog","facility":"cron"}'
+                ],
+                structured: [
+                    '[2023-10-11T22:14:15+00:00] ERROR: Authentication failed for user root (host=mymachine, facility=auth) [source: syslog]',
+                    '[2023-10-11T22:14:16+00:00] INFO: Service nginx started (pid=1234) [source: journald]',
+                    '[2023-10-11T22:14:17+00:00] INFO: Backup job completed successfully (facility=cron) [source: syslog]'
+                ],
+                simple: [
+                    '2023-10-11 22:14:15 [ERROR] Authentication failed for user root',
+                    '2023-10-11 22:14:16 [INFO] Service nginx started',
+                    '2023-10-11 22:14:17 [INFO] Backup job completed successfully'
+                ]
+            };
+        }
+        
+        function showOutput(format) {
+            if (!processedData || !processedData.sampleOutput) {
+                document.getElementById('outputViewer').textContent = 'No processed data available';
+                return;
+            }
+            
+            const output = processedData.sampleOutput[format] || [];
+            const viewer = document.getElementById('outputViewer');
+            
+            let html = '';
+            output.forEach((line, index) => {
+                const level = line.includes('ERROR') ? 'error' : line.includes('WARNING') ? 'warning' : 'info';
+                html += `<div class="log-entry ${level}">${line}</div>`;
+            });
+            
+            viewer.innerHTML = html || 'No output available for this format';
+        }
+        
+        function showUploadStatus(message, type) {
+            const status = document.getElementById('uploadStatus');
+            status.className = `alert ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Initialize with sample output
+        setTimeout(() => {
+            showOutput('json');
+        }, 500);
+    </script>
+</body>
+</html>

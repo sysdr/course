@@ -1,0 +1,26 @@
+{
+    "partitions": [
+        {
+            "partition_id": "partition_1",
+            "host": "partition-1",
+            "port": 8081,
+            "time_ranges": [
+                {
+                    "start": "2024-01-01T00:00:00",
+                    "end": "2024-12-31T23:59:59"
+                }
+            ]
+        },
+        {
+            "partition_id": "partition_2",
+            "host": "partition-2",
+            "port": 8082,
+            "time_ranges": [
+                {
+                    "start": "2024-01-01T00:00:00",
+                    "end": "2024-12-31T23:59:59"
+                }
+            ]
+        }
+    ]
+}

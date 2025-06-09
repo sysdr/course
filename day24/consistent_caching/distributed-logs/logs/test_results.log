@@ -1,0 +1,322 @@
+test_cluster_startup (__main__.TestClusterCoordinator.test_cluster_startup)
+Test cluster startup process. ... ok
+test_dynamic_node_addition (__main__.TestClusterCoordinator.test_dynamic_node_addition)
+Test adding nodes dynamically. ... ok
+test_log_distribution (__main__.TestClusterCoordinator.test_log_distribution)
+Test that logs are distributed correctly. ... ok
+test_empty_ring (__main__.TestConsistentHashing.test_empty_ring)
+Test behavior with empty ring. ... ok
+test_load_distribution_calculation (__main__.TestConsistentHashing.test_load_distribution_calculation)
+Test load distribution calculation. ... ok
+test_multiple_nodes_distribution (__main__.TestConsistentHashing.test_multiple_nodes_distribution)
+Test distribution across multiple nodes. ... ok
+test_node_addition_minimal_disruption (__main__.TestConsistentHashing.test_node_addition_minimal_disruption)
+Test that adding nodes causes minimal key redistribution. ... ok
+test_replication_nodes (__main__.TestConsistentHashing.test_replication_nodes)
+Test getting multiple nodes for replication. ... ok
+test_single_node (__main__.TestConsistentHashing.test_single_node)
+Test ring with single node. ... ok
+test_full_system_workflow (__main__.TestIntegration.test_full_system_workflow)
+Test complete workflow from log generation to querying. ... ok
+test_log_querying (__main__.TestStorageNode.test_log_querying)
+Test querying stored logs. ... ok
+test_log_storage (__main__.TestStorageNode.test_log_storage)
+Test storing log entries. ... ok
+test_partition_persistence (__main__.TestStorageNode.test_partition_persistence)
+Test that partitions are persisted to disk. ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.142s
+
+OK
+Cluster coordinator initialized with 50 virtual nodes per physical node
+🚀 Starting storage cluster...
+✅ Started node test-node-1 at port 8001
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpxks77i4q/node1
+   Affected ranges: 0
+✅ Started node test-node-2 at port 8002
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpxks77i4q/node2
+   Affected ranges: 50
+
+🎉 Cluster started with 2 nodes
+
+📊 Cluster Status:
+==================================================
+Nodes: 2
+Virtual nodes: 100
+Replica count: 50
+
+📈 Load Distribution:
+  test-node-2: 49.03%
+  test-node-1: 50.97%
+
+💾 Node Statistics:
+  test-node-1:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  test-node-2:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+Cluster coordinator initialized with 50 virtual nodes per physical node
+🚀 Starting storage cluster...
+✅ Started node test-node-1 at port 8001
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpzmws6pvr/node1
+   Affected ranges: 0
+✅ Started node test-node-2 at port 8002
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpzmws6pvr/node2
+   Affected ranges: 50
+
+🎉 Cluster started with 2 nodes
+
+📊 Cluster Status:
+==================================================
+Nodes: 2
+Virtual nodes: 100
+Replica count: 50
+
+📈 Load Distribution:
+  test-node-2: 49.03%
+  test-node-1: 50.97%
+
+💾 Node Statistics:
+  test-node-1:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  test-node-2:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+➕ Adding new node test-node-3...
+✅ Node test-node-3 added successfully
+   Affected ranges: 50
+🔄 Rebalancing cluster...
+✅ Rebalanced 0 logs
+
+📊 Cluster Status:
+==================================================
+Nodes: 3
+Virtual nodes: 150
+Replica count: 50
+
+📈 Load Distribution:
+  test-node-3: 34.59%
+  test-node-2: 30.88%
+  test-node-1: 34.53%
+
+💾 Node Statistics:
+  test-node-1:
+    Partitions: 1
+    Total logs: 50
+    Disk usage: 0.01 MB
+  test-node-2:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  test-node-3:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+Cluster coordinator initialized with 50 virtual nodes per physical node
+🚀 Starting storage cluster...
+✅ Started node test-node-1 at port 8001
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpqdzheltv/node1
+   Affected ranges: 0
+✅ Started node test-node-2 at port 8002
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmpqdzheltv/node2
+   Affected ranges: 50
+
+🎉 Cluster started with 2 nodes
+
+📊 Cluster Status:
+==================================================
+Nodes: 2
+Virtual nodes: 100
+Replica count: 50
+
+📈 Load Distribution:
+  test-node-2: 49.03%
+  test-node-1: 50.97%
+
+💾 Node Statistics:
+  test-node-1:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  test-node-2:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+Moved 253/1000 keys when adding node-4
+Cluster coordinator initialized with 30 virtual nodes per physical node
+🚀 Starting storage cluster...
+✅ Started node node-1 at port 8001
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmp6q1o7jf2/node1
+   Affected ranges: 0
+✅ Started node node-2 at port 8002
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmp6q1o7jf2/node2
+   Affected ranges: 31
+✅ Started node node-3 at port 8003
+   Data directory: /var/folders/gf/jgvgwzb53w934144f3yrd5pr0000gn/T/tmp6q1o7jf2/node3
+   Affected ranges: 30
+
+🎉 Cluster started with 3 nodes
+
+📊 Cluster Status:
+==================================================
+Nodes: 3
+Virtual nodes: 90
+Replica count: 30
+
+📈 Load Distribution:
+  node-1: 40.16%
+  node-2: 26.75%
+  node-3: 33.08%
+
+💾 Node Statistics:
+  node-1:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  node-2:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+  node-3:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+➕ Adding new node node-4...
+✅ Node node-4 added successfully
+   Affected ranges: 30
+🔄 Rebalancing cluster...
+✅ Rebalanced 0 logs
+
+📊 Cluster Status:
+==================================================
+Nodes: 4
+Virtual nodes: 120
+Replica count: 30
+
+📈 Load Distribution:
+  node-4: 23.11%
+  node-1: 36.43%
+  node-2: 19.38%
+  node-3: 21.07%
+
+💾 Node Statistics:
+  node-1:
+    Partitions: 1
+    Total logs: 50
+    Disk usage: 0.01 MB
+  node-2:
+    Partitions: 1
+    Total logs: 50
+    Disk usage: 0.01 MB
+  node-3:
+    Partitions: 2
+    Total logs: 100
+    Disk usage: 0.02 MB
+  node-4:
+    Partitions: 0
+    Total logs: 0
+    Disk usage: 0.00 MB
+==================================================
+Final cluster metrics: {
+  "cluster_summary": {
+    "total_nodes": 4,
+    "total_logs": 200,
+    "total_partitions": 4,
+    "total_disk_usage_mb": 0.04464149475097656
+  },
+  "ring_state": {
+    "nodes": [
+      "node-3",
+      "node-4",
+      "node-1",
+      "node-2"
+    ],
+    "virtual_nodes": 120,
+    "replica_count": 30,
+    "load_distribution": {
+      "node-4": 23.113732499187922,
+      "node-1": 36.43368452415312,
+      "node-2": 19.38182647007908,
+      "node-3": 21.070756506579873
+    },
+    "stats": {
+      "total_keys": 0,
+      "rebalance_operations": 0,
+      "node_additions": 4,
+      "node_removals": 0
+    }
+  },
+  "node_stats": {
+    "node-1": {
+      "node_id": "node-1",
+      "partition_count": 1,
+      "total_logs": 50,
+      "metrics": {
+        "logs_stored": 50,
+        "logs_retrieved": 199,
+        "rebalance_operations": 0,
+        "disk_usage_bytes": 11651
+      },
+      "disk_usage_mb": 0.011111259460449219,
+      "partitions": [
+        "web-server_2025-06-04-08"
+      ]
+    },
+    "node-2": {
+      "node_id": "node-2",
+      "partition_count": 1,
+      "total_logs": 50,
+      "metrics": {
+        "logs_stored": 50,
+        "logs_retrieved": 150,
+        "rebalance_operations": 0,
+        "disk_usage_bytes": 11764
+      },
+      "disk_usage_mb": 0.011219024658203125,
+      "partitions": [
+        "api-gateway_2025-06-04-08"
+      ]
+    },
+    "node-3": {
+      "node_id": "node-3",
+      "partition_count": 2,
+      "total_logs": 100,
+      "metrics": {
+        "logs_stored": 100,
+        "logs_retrieved": 300,
+        "rebalance_operations": 0,
+        "disk_usage_bytes": 23395
+      },
+      "disk_usage_mb": 0.02231121063232422,
+      "partitions": [
+        "database_2025-06-04-08",
+        "auth-service_2025-06-04-08"
+      ]
+    },
+    "node-4": {
+      "node_id": "node-4",
+      "partition_count": 0,
+      "total_logs": 0,
+      "metrics": {
+        "logs_stored": 0,
+        "logs_retrieved": 0,
+        "rebalance_operations": 0,
+        "disk_usage_bytes": 0
+      },
+      "disk_usage_mb": 0.0,
+      "partitions": []
+    }
+  }
+}

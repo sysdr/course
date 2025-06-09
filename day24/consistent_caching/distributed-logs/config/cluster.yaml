@@ -1,0 +1,22 @@
+cluster:
+  name: "log-storage-cluster"
+  replica_count: 150  # Virtual nodes per physical node
+  rebalance_batch_size: 1000
+  
+storage_nodes:
+  - id: "node-1"
+    host: "localhost"
+    port: 8001
+    data_dir: "./data/node1"
+  - id: "node-2" 
+    host: "localhost"
+    port: 8002
+    data_dir: "./data/node2"
+  - id: "node-3"
+    host: "localhost"
+    port: 8003
+    data_dir: "./data/node3"
+
+monitoring:
+  metrics_port: 9090
+  web_port: 8080

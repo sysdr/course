@@ -1,0 +1,20 @@
+[
+  {
+    "id": "log-2",
+    "source": "database",
+    "level": "ERROR",
+    "message": "Connection timeout",
+    "timestamp": 1749004484.5089612,
+    "stored_at": 1749004484.5119584,
+    "node_id": "node-4"
+  },
+  {
+    "id": "log-5",
+    "source": "database",
+    "level": "INFO",
+    "message": "Query executed",
+    "timestamp": 1749004484.5112023,
+    "stored_at": 1749004484.512491,
+    "node_id": "node-4"
+  }
+]

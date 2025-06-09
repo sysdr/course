@@ -1,0 +1,12 @@
+<34>Oct 11 22:14:15 server1 su: authentication failed for user bob
+__REALTIME_TIMESTAMP=1697058856123456
+MESSAGE=Service nginx started
+PRIORITY=6
+_PID=1234
+{"timestamp": "2023-10-11T22:14:17Z", "level": "ERROR", "message": "Database connection failed", "service": "api"}
+<85>Oct 11 22:14:18 server1 cron[5678]: backup job completed
+__REALTIME_TIMESTAMP=1697058859234567
+MESSAGE=User logged in successfully
+PRIORITY=6
+_PID=9012
+<166>Oct 11 22:14:20 server1 postfix: mail delivery failed

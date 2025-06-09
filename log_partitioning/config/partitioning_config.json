@@ -1,0 +1,24 @@
+{
+    "strategies": {
+        "source": {
+            "enabled": true,
+            "hash_function": "md5",
+            "nodes": ["node_1", "node_2", "node_3"]
+        },
+        "time": {
+            "enabled": true,
+            "window_hours": 8,
+            "nodes": ["node_1", "node_2", "node_3"]
+        }
+    },
+    "storage": {
+        "data_directory": "data",
+        "file_format": "jsonl",
+        "compression": false
+    },
+    "performance": {
+        "batch_size": 100,
+        "query_timeout": 30,
+        "max_results": 10000
+    }
+}

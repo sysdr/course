@@ -1,0 +1,23 @@
+{
+  "client": {
+    "server_host": "localhost",
+    "server_port": 8443,
+    "connection_timeout": 10,
+    "retry_attempts": 3,
+    "retry_backoff_base": 1.0
+  },
+  "ssl": {
+    "verify_certificates": false,
+    "min_tls_version": "TLSv1.2"
+  },
+  "compression": {
+    "enabled": true,
+    "level": 6,
+    "threshold_bytes": 100
+  },
+  "healthcare": {
+    "anonymization_enabled": true,
+    "salt": "tls_log_system_2024",
+    "hash_length": 12
+  }
+}

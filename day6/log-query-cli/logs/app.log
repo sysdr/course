@@ -1,0 +1,5 @@
+[2025-05-15 14:23:45] [INFO] User login successful: user123
+[2025-05-15 14:25:12] [ERROR] Database connection failed
+[2025-05-15 14:26:34] [WARN] High memory usage detected: 85%
+[2025-05-15 14:30:22] [INFO] API request processed in 120ms
+[2025-05-15 14:32:45] [ERROR] Failed to process payment for order #12345

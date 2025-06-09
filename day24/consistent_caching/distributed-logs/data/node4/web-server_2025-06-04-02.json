@@ -1,0 +1,20 @@
+[
+  {
+    "id": "log-1",
+    "source": "web-server",
+    "level": "INFO",
+    "message": "User login",
+    "timestamp": 1749004484.5077817,
+    "stored_at": 1749004484.5128205,
+    "node_id": "node-4"
+  },
+  {
+    "id": "log-4",
+    "source": "web-server",
+    "level": "WARN",
+    "message": "High memory usage",
+    "timestamp": 1749004484.5102592,
+    "stored_at": 1749004484.513323,
+    "node_id": "node-4"
+  }
+]

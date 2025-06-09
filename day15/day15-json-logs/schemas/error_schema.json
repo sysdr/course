@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Error Event Schema",
+  "description": "Schema for system error events and exceptions",
+  "type": "object",
+  "required": ["timestamp", "error_type", "message", "source"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the error occurred"
+    },
+    "error_type": {
+      "type": "string",
+      "enum": [
+        "ValidationError",
+        "DatabaseError", 
+        "NetworkError",
+        "AuthenticationError",
+        "AuthorizationError",
+        "TimeoutError",
+        "ResourceExhaustedError",
+        "ConfigurationError",
+        "SystemError",
+        "UnknownError"
+      ],
+      "description": "Category of error that occurred"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "description": "Human-readable error message"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Service or component where the error originated"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "default": "MEDIUM",
+      "description": "Severity level of the error"
+    },
+    "error_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{3,20}$",
+      "description": "Machine-readable error code"
+    },
+    "stack_trace": {
+      "type": "string",
+      "description": "Stack trace or detailed error information"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 64,
+      "description": "Request ID associated with this error"
+    },
+    "user_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "User ID associated with this error"
+    },
+    "context": {
+      "type": "object",
+      "description": "Additional context information",
+      "properties": {
+        "function_name": {"type": "string"},
+        "file_name": {"type": "string"},
+        "line_number": {"type": "integer", "minimum": 1},
+        "input_data": {"type": "object"},
+        "environment": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "resolution": {
+      "type": "object",
+      "description": "Information about error resolution",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["OPEN", "IN_PROGRESS", "RESOLVED", "IGNORED"]
+        },
+        "resolution_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolution_notes": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

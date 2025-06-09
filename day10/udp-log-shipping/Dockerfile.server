@@ -1,0 +1,16 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY src /app/src
+COPY requirements.txt /app/
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create a volume mount point for logs
+VOLUME ["/app/logs"]
+
+# Expose the UDP port
+EXPOSE 9999/udp
+
+CMD ["python", "-m", "src.server.udp_server"]
