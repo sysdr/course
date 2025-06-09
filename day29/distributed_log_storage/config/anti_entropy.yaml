@@ -1,0 +1,20 @@
+anti_entropy:
+  scan_interval: 30  # seconds
+  repair_timeout: 10  # seconds
+  max_concurrent_repairs: 3
+  consistency_threshold: 0.7  # 70% agreement required
+
+nodes:
+  node_a:
+    port: 8001
+    data_dir: "data/node_a"
+  node_b:
+    port: 8002
+    data_dir: "data/node_b"
+  node_c:
+    port: 8003
+    data_dir: "data/node_c"
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
