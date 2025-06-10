@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  monitoring:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data:/app/data
+      - ../logs:/app/logs
+      - ../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    
+  # Simulate additional nodes for testing
+  node-simulator-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      - NODE_ID=sim-node-1
+      - PYTHONPATH=/app
+    command: python -c "
+      import asyncio
+      import random
+      import time
+      from src.collectors.metric_collector import ApplicationMetricsCollector
+      
+      async def simulate_load():
+          collector = ApplicationMetricsCollector('sim-node-1')
+          while True:
+              # Simulate varying load
+              latency = random.uniform(10, 200)
+              collector.record_write_latency(latency)
+              await asyncio.sleep(random.uniform(0.1, 1.0))
+      
+      asyncio.run(simulate_load())
+    "
+    depends_on:
+      - monitoring
+
+  node-simulator-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      - NODE_ID=sim-node-2
+      - PYTHONPATH=/app
+    command: python -c "
+      import asyncio
+      import random
+      import time
+      from src.collectors.metric_collector import ApplicationMetricsCollector
+      
+      async def simulate_load():
+          collector = ApplicationMetricsCollector('sim-node-2')
+          while True:
+              # Simulate varying load
+              latency = random.uniform(5, 150)
+              collector.record_write_latency(latency)
+              await asyncio.sleep(random.uniform(0.1, 0.8))
+      
+      asyncio.run(simulate_load())
+    "
+    depends_on:
+      - monitoring

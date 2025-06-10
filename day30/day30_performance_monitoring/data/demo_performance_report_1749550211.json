@@ -1,0 +1,51 @@
+{
+  "report_timestamp": 1749550208.026467,
+  "report_id": "perf_report_1749550208",
+  "cluster_health": "healthy",
+  "performance_summary": {
+    "active_nodes": 1,
+    "cluster_cpu_avg": 17.175,
+    "cluster_memory_avg": 0,
+    "total_throughput": 0,
+    "performance_score": 75.0
+  },
+  "alerts_summary": {
+    "critical": 0,
+    "warning": 0,
+    "total": 0
+  },
+  "detailed_metrics": {
+    "timestamp": 1749550208.0257962,
+    "time_window": 300,
+    "nodes": {
+      "node-1": {
+        "cpu_usage": {
+          "min": 3.0,
+          "max": 28.0,
+          "avg": 17.175,
+          "median": 18.1,
+          "count": 8,
+          "std": 8.873998937505974
+        },
+        "cpu_usage_total": {
+          "min": 17.175,
+          "max": 17.175,
+          "avg": 17.175,
+          "median": 17.175,
+          "count": 1
+        }
+      }
+    },
+    "cluster_totals": {
+      "avg_cpu_usage": 17.175,
+      "max_cpu_usage": 17.175
+    }
+  },
+  "alerts": [],
+  "recommendations": [
+    "Monitor application bottlenecks that may be limiting throughput"
+  ],
+  "trends": {
+    "cpu": "stable_low"
+  }
+}
