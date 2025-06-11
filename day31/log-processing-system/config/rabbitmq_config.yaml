@@ -1,0 +1,26 @@
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  virtual_host: /
+  
+queues:
+  log_processing:
+    name: log_messages
+    durable: true
+    auto_delete: false
+  error_logs:
+    name: error_messages
+    durable: true
+    auto_delete: false
+  debug_logs:
+    name: debug_messages
+    durable: true
+    auto_delete: false
+
+exchanges:
+  log_exchange:
+    name: logs
+    type: topic
+    durable: true
