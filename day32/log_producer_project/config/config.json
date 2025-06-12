@@ -1,0 +1,20 @@
+{
+    "rabbitmq": {
+        "host": "localhost",
+        "port": 5672,
+        "exchange": "logs_exchange",
+        "routing_key": "application.logs",
+        "username": "guest",
+        "password": "guest"
+    },
+    "producer": {
+        "batch_size": 50,
+        "batch_timeout_ms": 100,
+        "port": 8080,
+        "log_level": "INFO"
+    },
+    "health": {
+        "check_interval_seconds": 30,
+        "failure_threshold": 5
+    }
+}
