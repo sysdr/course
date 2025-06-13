@@ -1,0 +1,24 @@
+{
+    "redis": {
+        "url": "redis://localhost:6379",
+        "max_connections": 20
+    },
+    "consumers": {
+        "queue_name": "logs",
+        "consumer_group": "log-processors",
+        "num_consumers": 2,
+        "batch_size": 10,
+        "poll_timeout": 1000,
+        "max_retries": 3
+    },
+    "processing": {
+        "enable_metrics": true,
+        "store_processed_logs": true,
+        "log_retention_days": 7
+    },
+    "monitoring": {
+        "dashboard_port": 8000,
+        "metrics_enabled": true,
+        "health_check_interval": 30
+    }
+}
