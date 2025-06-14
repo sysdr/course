@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq_reliable_consumer
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_reliable_consumer
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  reliable_consumer:
+    build: .
+    container_name: reliable_consumer_app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    volumes:
+      - ./logs:/app/logs
+    command: python src/main.py
+
+  web_dashboard:
+    build: .
+    container_name: reliable_consumer_web
+    ports:
+      - "8000:8000"
+    command: python web/app.py
+
+volumes:
+  rabbitmq_data:
+  redis_data:
