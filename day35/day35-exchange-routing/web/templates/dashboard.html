@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Log Routing Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 2em; font-weight: bold; color: #3498db; }
+        .log-stream { background: white; padding: 20px; border-radius: 8px; height: 400px; overflow-y: auto; }
+        .log-entry { padding: 10px; border-left: 4px solid #3498db; margin-bottom: 10px; background: #f8f9fa; }
+        .log-error { border-left-color: #e74c3c; }
+        .log-warning { border-left-color: #f39c12; }
+        .log-info { border-left-color: #2ecc71; }
+        .chart-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Log Routing Dashboard</h1>
+            <p>Real-time monitoring of exchange-based log routing patterns</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Messages</h3>
+                <div class="stat-value" id="total-messages">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Direct Exchange</h3>
+                <div class="stat-value" id="direct-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Topic Exchange</h3>
+                <div class="stat-value" id="topic-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Fanout Exchange</h3>
+                <div class="stat-value" id="fanout-count">0</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Service Distribution</h3>
+            <canvas id="service-chart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="log-stream">
+            <h3>Live Log Stream</h3>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const serviceChart = new Chart(document.getElementById('service-chart'), {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#3498db', '#e74c3c', '#f39c12', '#2ecc71', '#9b59b6']
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        socket.on('log_update', function(data) {
+            updateStats(data.stats);
+            addLogEntry(data.message);
+            updateChart(data.stats.by_service);
+        });
+
+        function updateStats(stats) {
+            document.getElementById('total-messages').textContent = stats.total_messages;
+            document.getElementById('direct-count').textContent = stats.by_exchange.direct;
+            document.getElementById('topic-count').textContent = stats.by_exchange.topic;
+            document.getElementById('fanout-count').textContent = stats.by_exchange.fanout;
+        }
+
+        function addLogEntry(message) {
+            const logEntries = document.getElementById('log-entries');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${message.level}`;
+            entry.innerHTML = `
+                <strong>${message.service}.${message.component}</strong> 
+                [${message.level.toUpperCase()}]<br>
+                ${message.message}<br>
+                <small>${new Date(message.timestamp).toLocaleTimeString()}</small>
+            `;
+            logEntries.insertBefore(entry, logEntries.firstChild);
+            
+            // Keep only last 20 entries
+            while (logEntries.children.length > 20) {
+                logEntries.removeChild(logEntries.lastChild);
+            }
+        }
+
+        function updateChart(serviceData) {
+            serviceChart.data.labels = Object.keys(serviceData);
+            serviceChart.data.datasets[0].data = Object.values(serviceData);
+            serviceChart.update();
+        }
+    </script>
+</body>
+</html>
