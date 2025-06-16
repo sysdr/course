@@ -1,0 +1,75 @@
+*2
+$6
+SELECT
+$1
+0
+*3
+$5
+LPUSH
+$14
+log_processing
+$309
+{"id": "3605fdb4-3616-4086-845e-ce36f7685448", "timestamp": "2025-06-16T13:45:48.074191", "level": "ERROR", "source": "web-server", "message": "System memory usage: 93%", "metadata": {"request_id": "63dd9699-eb20-4e0d-8bb3-26a077a5f176", "user_id": null, "session_id": "c1381692-783d-435a-8b8b-e978114387ed"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$328
+{"id": "a391cc5e-353a-4477-a661-c6dc763c8401", "timestamp": "2025-06-16T13:45:48.087406", "level": "WARNING", "source": "database", "message": "Error processing request: Connection timeout", "metadata": {"request_id": "3f2bb354-21dd-4cb8-81a4-1023929f85af", "user_id": 612, "session_id": "d9bf60e2-0787-4441-83d8-ea158b3186d6"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$285
+{"id": "f1bccae4-4f35-4f77-86b0-2013d725dbf1", "timestamp": "2025-06-16T13:45:48.097834", "level": "ERROR", "source": "database", "message": "User user_3608 logged in successfully", "metadata": {"request_id": "5a0329d5-3395-4376-9ad2-08c8028ed397", "user_id": 315, "session_id": null}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$284
+{"id": "f9523abb-91ae-4cc7-b3e5-218b5bd5bbeb", "timestamp": "2025-06-16T13:45:48.108206", "level": "ERROR", "source": "database", "message": "Payment processed for amount $327.47", "metadata": {"request_id": "259edeb7-0230-492c-9e58-720ba3703c64", "user_id": 189, "session_id": null}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$333
+{"id": "5cd31f3b-745e-4e57-a771-43733a51c39e", "timestamp": "2025-06-16T13:45:48.118610", "level": "DEBUG", "source": "payment-service", "message": "API request to /api/v1/endpoint_9 completed", "metadata": {"request_id": "fae8edad-c400-45c9-9e76-84f3d0aeb773", "user_id": null, "session_id": "3df48d6e-80ca-4c04-9ac8-e6fee264eea3"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$320
+{"id": "f5effdd9-1b55-488d-8cdc-9c985bc5ed6a", "timestamp": "2025-06-16T13:45:48.129081", "level": "WARNING", "source": "web-server", "message": "Database query executed in 452 ms", "metadata": {"request_id": "4ca49015-94d9-4b17-8c0d-f7565498b6e9", "user_id": null, "session_id": "e068ceea-8c61-44d5-8a01-1bef63e7d9b2"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$288
+{"id": "a6aed9f2-b25b-4a43-b822-9ca48eb15a63", "timestamp": "2025-06-16T13:45:48.140427", "level": "WARNING", "source": "web-server", "message": "Invalid JSON in request: {{malformed", "metadata": {"request_id": "bf3df1c4-7665-44bf-9b87-b90f6542abbf", "user_id": 660, "session_id": null}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$309
+{"id": "fb51f87e-b0ed-425b-bd3f-9b596590e05f", "timestamp": "2025-06-16T13:45:48.151729", "level": "DEBUG", "source": "api-gateway", "message": "System memory usage: 55%", "metadata": {"request_id": "7a02f533-bb68-4ff1-bf8a-bd4b42f059f4", "user_id": 877, "session_id": "dbfede31-df42-4994-a9d0-d2a76046ee26"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$331
+{"id": "abf86e6e-b28d-4861-9ca0-679db1fbc05c", "timestamp": "2025-06-16T13:45:48.162095", "level": "WARNING", "source": "api-gateway", "message": "API request to /api/v1/endpoint_1 completed", "metadata": {"request_id": "7e8c533f-d1c4-4216-bbca-6dcc11a541f6", "user_id": null, "session_id": "6d076645-a26e-4290-97be-f2a4bb27d9f7"}}
+*3
+$5
+LPUSH
+$14
+log_processing
+$322
+{"id": "359589f7-3cba-43a4-b43c-d5815935892f", "timestamp": "2025-06-16T13:45:48.172795", "level": "ERROR", "source": "cache", "message": "API request to /api/v1/endpoint_1 completed", "metadata": {"request_id": "1d97aa01-9251-4fe9-8701-07da2be59712", "user_id": 873, "session_id": "b7a5efb2-923c-45d3-8a05-27a840f094b3"}}
