@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priority Queue Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .metric { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 6px; }
+        .metric h3 { margin: 0; color: #495057; }
+        .metric .value { font-size: 2em; font-weight: bold; margin: 10px 0; }
+        .critical .value { color: #dc3545; }
+        .high .value { color: #fd7e14; }
+        .medium .value { color: #ffc107; }
+        .low .value { color: #28a745; }
+        .controls { display: flex; gap: 10px; margin: 20px 0; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-critical { background: #dc3545; color: white; }
+        .btn-high { background: #fd7e14; color: white; }
+        .btn-medium { background: #ffc107; color: black; }
+        .btn-low { background: #28a745; color: white; }
+        .chart-container { height: 400px; }
+        .log-table { width: 100%; border-collapse: collapse; }
+        .log-table th, .log-table td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .log-table th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Priority Queue Dashboard</h1>
+        
+        <div class="card">
+            <h2>Queue Status</h2>
+            <div class="metrics" id="metrics">
+                <!-- Metrics will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Test Controls</h2>
+            <div class="controls">
+                <button class="btn btn-critical" onclick="injectMessage('critical')">Inject Critical</button>
+                <button class="btn btn-high" onclick="injectMessage('high')">Inject High</button>
+                <button class="btn btn-medium" onclick="injectMessage('medium')">Inject Medium</button>
+                <button class="btn btn-low" onclick="injectMessage('low')">Inject Low</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Processing Rate</h2>
+            <div class="chart-container">
+                <canvas id="processingChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Processed Messages</h2>
+            <table class="log-table" id="processedTable">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Priority</th>
+                        <th>Worker</th>
+                        <th>Message ID</th>
+                        <th>Processing Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Processed messages will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        let processedCounts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+        
+        function initChart() {
+            const ctx = document.getElementById('processingChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        label: 'Messages Processed',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function updateMetrics(status) {
+            const metrics = document.getElementById('metrics');
+            metrics.innerHTML = `
+                <div class="metric critical">
+                    <h3>Critical Queue</h3>
+                    <div class="value">${status.queue_by_priority.CRITICAL || 0}</div>
+                </div>
+                <div class="metric high">
+                    <h3>High Queue</h3>
+                    <div class="value">${status.queue_by_priority.HIGH || 0}</div>
+                </div>
+                <div class="metric medium">
+                    <h3>Medium Queue</h3>
+                    <div class="value">${status.queue_by_priority.MEDIUM || 0}</div>
+                </div>
+                <div class="metric low">
+                    <h3>Low Queue</h3>
+                    <div class="value">${status.queue_by_priority.LOW || 0}</div>
+                </div>
+                <div class="metric">
+                    <h3>Total Received</h3>
+                    <div class="value">${status.metrics.messages_received}</div>
+                </div>
+                <div class="metric">
+                    <h3>Total Processed</h3>
+                    <div class="value">${status.processed_messages_count}</div>
+                </div>
+            `;
+        }
+        
+        function updateProcessedTable(processed) {
+            const tbody = document.querySelector('#processedTable tbody');
+            tbody.innerHTML = processed.slice(0, 10).map(msg => `
+                <tr>
+                    <td>${new Date(msg.processed_at * 1000).toLocaleTimeString()}</td>
+                    <td><span style="color: ${getPriorityColor(msg.priority)}">${msg.priority}</span></td>
+                    <td>${msg.worker_id}</td>
+                    <td>${msg.message_id.slice(0, 8)}...</td>
+                    <td>${(msg.processing_time * 1000).toFixed(1)}ms</td>
+                </tr>
+            `).join('');
+        }
+        
+        function getPriorityColor(priority) {
+            const colors = { CRITICAL: '#dc3545', HIGH: '#fd7e14', MEDIUM: '#ffc107', LOW: '#28a745' };
+            return colors[priority] || '#6c757d';
+        }
+        
+        function updateChart(processed) {
+            const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+            processed.forEach(msg => counts[msg.priority]++);
+            
+            chart.data.datasets[0].data = [counts.CRITICAL, counts.HIGH, counts.MEDIUM, counts.LOW];
+            chart.update();
+        }
+        
+        function injectMessage(priority) {
+            fetch(`/api/inject/${priority}`)
+                .then(response => response.json())
+                .then(data => console.log(`Injected ${priority} message:`, data));
+        }
+        
+        function fetchData() {
+            Promise.all([
+                fetch('/api/status').then(r => r.json()),
+                fetch('/api/processed').then(r => r.json())
+            ]).then(([status, processed]) => {
+                updateMetrics(status);
+                updateProcessedTable(processed);
+                updateChart(processed);
+            });
+        }
+        
+        // Initialize
+        initChart();
+        fetchData();
+        
+        // Update every 2 seconds
+        setInterval(fetchData, 2000);
+    </script>
+</body>
+</html>
