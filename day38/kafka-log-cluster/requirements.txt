@@ -1,0 +1,13 @@
+confluent-kafka==2.4.0
+six==1.16.0
+fastapi==0.111.0
+uvicorn==0.30.1
+pydantic==2.7.1
+asyncio-mqtt==0.16.1
+prometheus-client==0.20.0
+pytest==8.2.1
+pytest-asyncio==0.23.7
+requests==2.32.2
+faker==25.3.0
+websockets==12.0
+jinja2==3.1.4
