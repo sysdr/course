@@ -1,0 +1,32 @@
+kafka:
+  bootstrap_servers: "localhost:9092"
+  client_id: "log-producer-client"
+  security_protocol: "PLAINTEXT"
+  
+producer:
+  acks: "all"  # Wait for all in-sync replicas
+  retries: 2147483647  # Retry until success
+  batch_size: 16384  # 16KB batches
+  linger_ms: 5  # Wait up to 5ms for batching
+  compression_type: "gzip"
+  enable_idempotence: true
+  max_in_flight_requests_per_connection: 5
+  buffer_memory: 33554432  # 32MB buffer
+  request_timeout_ms: 30000
+  delivery_timeout_ms: 120000
+
+topics:
+  application_logs: "logs-application"
+  database_logs: "logs-database" 
+  security_logs: "logs-security"
+  error_logs: "logs-errors"
+
+monitoring:
+  metrics_port: 8000
+  health_check_interval: 30
+  performance_logging: true
+
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/producer.log"

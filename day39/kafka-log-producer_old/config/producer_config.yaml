@@ -1,0 +1,29 @@
+kafka:
+  bootstrap.servers: "localhost:9092"
+  client.id: "log-producer-client"
+  security.protocol: "PLAINTEXT"
+  
+producer:
+  acks: "all"
+  retries: 3
+  batch.size: 16384
+  linger.ms: 5
+  compression.type: "gzip"
+  enable.idempotence: true
+  request.timeout.ms: 30000
+
+topics:
+  application_logs: "logs-application"
+  database_logs: "logs-database" 
+  security_logs: "logs-security"
+  error_logs: "logs-errors"
+
+monitoring:
+  metrics_port: 8000
+  health_check_interval: 30
+  performance_logging: true
+
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/producer.log"
