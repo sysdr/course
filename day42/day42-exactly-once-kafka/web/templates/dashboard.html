@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exactly-Once Processing Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .guarantee-status {
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .guarantee-maintained {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .guarantee-violated {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .accounts-section, .transactions-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .account-item, .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .account-item:last-child, .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .status-pending { color: #ffc107; }
+        .status-completed { color: #28a745; }
+        .status-failed { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Exactly-Once Processing Monitor</h1>
+            <p>Real-time monitoring of Kafka transaction processing with exactly-once semantics</p>
+            <div id="guarantee-status" class="guarantee-status guarantee-maintained">
+                EXACTLY-ONCE GUARANTEE: MAINTAINED
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div id="total-transactions" class="stat-value">0</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div id="completed-transactions" class="stat-value">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div id="failed-transactions" class="stat-value">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div id="processing-rate" class="stat-value">0</div>
+                <div class="stat-label">Tx/Min</div>
+            </div>
+        </div>
+
+        <div class="accounts-section">
+            <h3>💰 Account Balances</h3>
+            <div id="account-balances">
+                <div class="account-item">
+                    <span>Loading account balances...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="transactions-section">
+            <h3>📋 Recent Transactions</h3>
+            <div id="recent-transactions">
+                <div class="transaction-item">
+                    <span>Loading recent transactions...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        socket.on('connect', function() {
+            console.log('Connected to exactly-once monitor');
+        });
+        
+        socket.on('stats_update', function(data) {
+            updateDashboard(data);
+        });
+        
+        function updateDashboard(data) {
+            // Update statistics
+            document.getElementById('total-transactions').textContent = data.stats.total_transactions || 0;
+            document.getElementById('completed-transactions').textContent = data.stats.completed_transactions || 0;
+            document.getElementById('failed-transactions').textContent = data.stats.failed_transactions || 0;
+            document.getElementById('processing-rate').textContent = data.stats.processing_rate || 0;
+            
+            // Update guarantee status
+            const guaranteeEl = document.getElementById('guarantee-status');
+            if (data.guarantee_check && data.guarantee_check.guarantee_status === 'MAINTAINED') {
+                guaranteeEl.className = 'guarantee-status guarantee-maintained';
+                guaranteeEl.textContent = 'EXACTLY-ONCE GUARANTEE: MAINTAINED ✅';
+            } else {
+                guaranteeEl.className = 'guarantee-status guarantee-violated';
+                guaranteeEl.textContent = 'EXACTLY-ONCE GUARANTEE: VIOLATED ❌';
+            }
+            
+            // Update account balances
+            const balancesEl = document.getElementById('account-balances');
+            if (data.balances && data.balances.length > 0) {
+                balancesEl.innerHTML = data.balances.map(account => `
+                    <div class="account-item">
+                        <span><strong>${account.account_number}</strong></span>
+                        <span>$${account.balance.toFixed(2)}</span>
+                    </div>
+                `).join('');
+            } else {
+                balancesEl.innerHTML = '<div class="account-item">No account data available</div>';
+            }
+            
+            // Update recent transactions
+            const transactionsEl = document.getElementById('recent-transactions');
+            if (data.recent_transactions && data.recent_transactions.length > 0) {
+                transactionsEl.innerHTML = data.recent_transactions.map(tx => `
+                    <div class="transaction-item">
+                        <div>
+                            <strong>${tx.transaction_id.substr(0, 8)}...</strong><br>
+                            <small>${tx.from_account} → ${tx.to_account}</small>
+                        </div>
+                        <div>
+                            <span>$${tx.amount.toFixed(2)}</span><br>
+                            <small class="status-${tx.status}">${tx.status.toUpperCase()}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                transactionsEl.innerHTML = '<div class="transaction-item">No recent transactions</div>';
+            }
+        }
+        
+        // Initial load
+        fetch('/api/stats')
+            .then(response => {
+                console.log('API response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Initial data loaded:', data);
+                updateDashboard(data);
+            })
+            .catch(error => {
+                console.error('Error loading initial data:', error);
+            });
+        
+        // Test function to manually trigger update
+        window.testDashboard = function() {
+            console.log('Manual test triggered');
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Test data:', data);
+                    updateDashboard(data);
+                })
+                .catch(error => {
+                    console.error('Test error:', error);
+                });
+        };
+        
+        // Auto-refresh every 10 seconds as backup
+        setInterval(() => {
+            console.log('Auto-refreshing dashboard...');
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => updateDashboard(data))
+                .catch(error => console.error('Auto-refresh error:', error));
+        }, 10000);
+    </script>
+</body>
+</html>
