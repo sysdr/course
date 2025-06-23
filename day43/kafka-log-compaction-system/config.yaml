@@ -1,0 +1,31 @@
+kafka:
+  bootstrap_servers: "localhost:9092"
+  topic_name: "user-profiles-compacted"
+  partitions: 3
+  replication_factor: 1
+  
+  # Compaction Settings
+  compaction:
+    cleanup_policy: "compact"
+    segment_bytes: 134217728  # 128MB
+    min_cleanable_ratio: 0.5
+    delete_retention_ms: 86400000  # 24 hours
+    
+  # Producer Settings
+  producer:
+    acks: "all"
+    retries: 2147483647
+    enable_idempotence: true
+    max_in_flight_requests_per_connection: 1
+    
+  # Consumer Settings
+  consumer:
+    group_id: "compaction-state-consumer"
+    auto_offset_reset: "earliest"
+    enable_auto_commit: false
+    isolation_level: "read_committed"
+
+app:
+  state_rebuild_batch_size: 1000
+  monitoring_interval_ms: 5000
+  web_port: 8080
