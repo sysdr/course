@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Log Storage Cluster Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .cluster-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .overview-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .overview-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .overview-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .node-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid #ecf0f1;
+            transition: transform 0.3s ease;
+        }
+        
+        .node-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .node-card.primary {
+            border-color: #27ae60;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f4f9f4 100%);
+        }
+        
+        .node-card.replica {
+            border-color: #3498db;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3f8fd 100%);
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .node-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .node-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-unhealthy {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .node-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .logs-section {
+            margin-top: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .logs-title {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .log-entry {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .refresh-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🚀 Distributed Log Storage Cluster</h1>
+            <p>Day 22: Multi-Node Storage with Replication</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="cluster-overview">
+                <div class="overview-card">
+                    <h3>Total Nodes</h3>
+                    <div class="value" id="totalNodes">3</div>
+                </div>
+                <div class="overview-card">
+                    <h3>Healthy Nodes</h3>
+                    <div class="value" id="healthyNodes">-</div>
+                </div>
+                <div class="overview-card">
+                    <h3>Total Writes</h3>
+                    <div class="value" id="totalWrites">-</div>
+                </div>
+                <div class="overview-card">
+                    <h3>Replication Factor</h3>
+                    <div class="value">2</div>
+                </div>
+            </div>
+            
+            <div class="nodes-grid" id="nodesGrid">
+                <!-- Nodes will be populated by JavaScript -->
+            </div>
+            
+            <div class="controls">
+                <button class="btn" onclick="refreshData()">
+                    Refresh Data
+                    <span class="refresh-indicator hidden" id="refreshIndicator"></span>
+                </button>
+                <button class="btn" onclick="testWrite()">Test Write</button>
+                <button class="btn" onclick="simulateLoad()">Simulate Load</button>
+            </div>
+            
+            <div class="logs-section">
+                <h3 class="logs-title">Recent Activity</h3>
+                <div id="activityLogs">
+                    <div class="log-entry">Dashboard initialized - monitoring cluster health</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="static/dashboard.js"></script>
+</body>
+</html>

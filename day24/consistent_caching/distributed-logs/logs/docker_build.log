@@ -1,0 +1,51 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 478B done
+#1 DONE 0.0s
+
+#2 [auth] library/python:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.9-slim
+#3 DONE 1.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 145B done
+#4 DONE 0.0s
+
+#5 [1/8] FROM docker.io/library/python:3.9-slim@sha256:aff2066ec8914f7383e115bbbcde4d24da428eac377b0d4bb73806de992d240f
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 90.58kB 0.0s done
+#6 DONE 0.0s
+
+#7 [2/8] WORKDIR /app
+#7 CACHED
+
+#8 [3/8] RUN pip install PyYAML
+#8 CACHED
+
+#9 [4/8] COPY src/ ./src/
+#9 DONE 0.0s
+
+#10 [5/8] COPY config/ ./config/
+#10 DONE 0.0s
+
+#11 [6/8] COPY tests/ ./tests/
+#11 DONE 0.0s
+
+#12 [7/8] COPY web/ ./web/
+#12 DONE 0.0s
+
+#13 [8/8] RUN mkdir -p data/{node1,node2,node3,node4} logs
+#13 DONE 0.2s
+
+#14 exporting to image
+#14 exporting layers 0.0s done
+#14 writing image sha256:782445a416782b1cf7760fb3428d08e0fd44a5f131b8d16ddf4616fb9d9571f1 done
+#14 naming to docker.io/library/distributed-logs-day24 done
+#14 DONE 0.0s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/mcrq1bpiokbpbpgnzuqbdvbwt

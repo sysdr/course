@@ -1,0 +1,7 @@
+# Core dependencies
+pytest>=6.0.0
+pytest-cov>=2.10.0
+
+# Optional dependencies for extended functionality
+colorama>=0.4.4
+tabulate>=0.8.9 

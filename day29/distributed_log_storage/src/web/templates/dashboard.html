@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anti-Entropy Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .repair-queue, .node-stats {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .inject-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>🔄 Anti-Entropy Dashboard</h1>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="total-comparisons">0</div>
+                <div class="metric-label">Total Comparisons</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="inconsistencies">0</div>
+                <div class="metric-label">Inconsistencies Detected</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="repairs-completed">0</div>
+                <div class="metric-label">Repairs Completed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="avg-repair-time">0.0s</div>
+                <div class="metric-label">Avg Repair Time</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Controls</h3>
+            <div class="controls">
+                <button onclick="triggerScan()">🔍 Trigger Immediate Scan</button>
+                <button onclick="refreshData()">🔄 Refresh Data</button>
+            </div>
+            
+            <h4>Inject Test Inconsistency</h4>
+            <div class="inject-form">
+                <select id="node-select">
+                    <option value="node_a">Node A</option>
+                    <option value="node_b">Node B</option>
+                    <option value="node_c">Node C</option>
+                </select>
+                <input type="text" id="test-key" placeholder="Key (optional)" />
+                <input type="text" id="test-value" placeholder="Value (optional)" />
+                <button onclick="injectInconsistency()">💉 Inject Inconsistency</button>
+            </div>
+            
+            <div id="status-messages"></div>
+        </div>
+        
+        <div class="card">
+            <h3>Repair Queue</h3>
+            <div id="repair-queue">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="repair-queue-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Node Statistics</h3>
+            <div id="node-stats">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node ID</th>
+                            <th>Entry Count</th>
+                            <th>Last Update</th>
+                        </tr>
+                    </thead>
+                    <tbody id="node-stats-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+        
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status-messages');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            statusDiv.appendChild(statusElement);
+            
+            setTimeout(() => {
+                statusElement.remove();
+            }, 5000);
+        }
+        
+        async function refreshData() {
+            try {
+                // Update metrics
+                const metricsResponse = await fetch('/api/metrics');
+                const metrics = await metricsResponse.json();
+                
+                document.getElementById('total-comparisons').textContent = metrics.total_comparisons || 0;
+                document.getElementById('inconsistencies').textContent = metrics.inconsistencies_detected || 0;
+                document.getElementById('repairs-completed').textContent = metrics.repairs_completed || 0;
+                document.getElementById('avg-repair-time').textContent = `${(metrics.average_repair_time || 0).toFixed(2)}s`;
+                
+                // Update repair queue
+                const queueResponse = await fetch('/api/repair-queue');
+                const repairQueue = await queueResponse.json();
+                
+                const queueBody = document.getElementById('repair-queue-body');
+                queueBody.innerHTML = '';
+                
+                repairQueue.forEach(task => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${task.source_node}</td>
+                        <td>${task.target_node}</td>
+                        <td>${task.priority}</td>
+                        <td>${task.status}</td>
+                        <td>${new Date(task.created_at).toLocaleTimeString()}</td>
+                    `;
+                    queueBody.appendChild(row);
+                });
+                
+                // Update node stats
+                const nodesResponse = await fetch('/api/nodes');
+                const nodeStats = await nodesResponse.json();
+                
+                const statsBody = document.getElementById('node-stats-body');
+                statsBody.innerHTML = '';
+                
+                Object.entries(nodeStats).forEach(([nodeId, stats]) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${stats.node_id}</td>
+                        <td>${stats.entry_count}</td>
+                        <td>${new Date(stats.last_update).toLocaleTimeString()}</td>
+                    `;
+                    statsBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                showStatus(`Error refreshing data: ${error.message}`, 'error');
+            }
+        }
+        
+        async function triggerScan() {
+            try {
+                const response = await fetch('/api/trigger-scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('Anti-entropy scan triggered successfully!');
+                } else {
+                    showStatus(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error triggering scan: ${error.message}`, 'error');
+            }
+        }
+        
+        async function injectInconsistency() {
+            try {
+                const nodeId = document.getElementById('node-select').value;
+                const key = document.getElementById('test-key').value;
+                const value = document.getElementById('test-value').value;
+                
+                const response = await fetch('/api/inject-inconsistency', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        node_id: nodeId,
+                        key: key || undefined,
+                        value: value || undefined
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(`Inconsistency injected: ${result.key} = ${result.value} on ${nodeId}`);
+                    document.getElementById('test-key').value = '';
+                    document.getElementById('test-value').value = '';
+                } else {
+                    showStatus(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error injecting inconsistency: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-refresh every 5 seconds
+        refreshInterval = setInterval(refreshData, 5000);
+        
+        // Initial load
+        refreshData();
+    </script>
+</body>
+</html>

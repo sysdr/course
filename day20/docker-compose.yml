@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  compatibility-layer:
+    build: .
+    container_name: day20_compatibility_layer
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    
+  # Optional: Log file watcher for real-time processing
+  log-watcher:
+    build: .
+    container_name: day20_log_watcher
+    volumes:
+      - ./logs:/app/logs
+    command: python3 -c "print('Log watcher ready for real-time processing')"
+    depends_on:
+      - compatibility-layer
+    restart: unless-stopped
+
+networks:
+  default:
+    name: compatibility_layer_network 

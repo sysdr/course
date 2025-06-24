@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: priority-log-processor
+Version: 1.0.0
+Summary: High-performance priority queue system for distributed log processing
+Author: Priority Queue System
+Requires-Python: >=3.8
+Requires-Dist: asyncio-throttle>=1.0.2
+Requires-Dist: aioredis>=2.0.1
+Requires-Dist: prometheus-client>=0.17.1
+Requires-Dist: flask>=2.3.2
+Requires-Dist: pytest>=7.4.0
+Requires-Dist: pytest-asyncio>=0.21.1
+Requires-Dist: redis>=4.6.0
+Requires-Dist: pydantic>=2.0.3
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

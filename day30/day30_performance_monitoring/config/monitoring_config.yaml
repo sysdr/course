@@ -1,0 +1,42 @@
+monitoring:
+  collection_interval: 5  # seconds
+  retention_period: 86400  # 24 hours in seconds
+  
+cluster:
+  nodes:
+    - id: "node-1"
+      host: "localhost"
+      port: 8001
+      role: "primary"
+    - id: "node-2"
+      host: "localhost"
+      port: 8002
+      role: "replica"
+    - id: "node-3"
+      host: "localhost"
+      port: 8003
+      role: "replica"
+
+metrics:
+  system:
+    - cpu_usage
+    - memory_usage
+    - disk_io
+    - network_io
+  application:
+    - log_write_latency
+    - log_read_latency
+    - replication_lag
+    - throughput
+  thresholds:
+    cpu_warning: 70
+    cpu_critical: 90
+    memory_warning: 80
+    memory_critical: 95
+    latency_warning: 100  # ms
+    latency_critical: 500  # ms
+
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+  refresh_interval: 10

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .status-failed { color: #dc3545; }
+        .status-completed { color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Test</h1>
+    
+    <div class="section">
+        <h3>💰 Account Balances</h3>
+        <div id="account-balances">
+            <div class="item">Loading...</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📋 Recent Transactions</h3>
+        <div id="recent-transactions">
+            <div class="item">Loading...</div>
+        </div>
+    </div>
+
+    <button onclick="testAPI()">Test API</button>
+    <button onclick="clearData()">Clear Data</button>
+
+    <script>
+        function testAPI() {
+            console.log('Testing API...');
+            fetch('/api/stats')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Data:', data);
+                    updateDisplay(data);
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    document.getElementById('account-balances').innerHTML = '<div class="item">Error loading data</div>';
+                    document.getElementById('recent-transactions').innerHTML = '<div class="item">Error loading data</div>';
+                });
+        }
+
+        function updateDisplay(data) {
+            // Update account balances
+            const balancesEl = document.getElementById('account-balances');
+            if (data.account_balances && data.account_balances.length > 0) {
+                balancesEl.innerHTML = data.account_balances.map(account => `
+                    <div class="item">
+                        <span><strong>${account.account_number}</strong></span>
+                        <span>$${account.balance.toFixed(2)}</span>
+                    </div>
+                `).join('');
+            } else {
+                balancesEl.innerHTML = '<div class="item">No accounts found</div>';
+            }
+
+            // Update recent transactions
+            const transactionsEl = document.getElementById('recent-transactions');
+            if (data.recent_transactions && data.recent_transactions.length > 0) {
+                transactionsEl.innerHTML = data.recent_transactions.map(tx => `
+                    <div class="item">
+                        <div>
+                            <strong>${tx.transaction_id.substr(0, 8)}...</strong><br>
+                            <small>${tx.from_account} → ${tx.to_account}</small>
+                        </div>
+                        <div>
+                            <span>$${tx.amount.toFixed(2)}</span><br>
+                            <small class="status-${tx.status}">${tx.status.toUpperCase()}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                transactionsEl.innerHTML = '<div class="item">No transactions found</div>';
+            }
+        }
+
+        function clearData() {
+            document.getElementById('account-balances').innerHTML = '<div class="item">Cleared</div>';
+            document.getElementById('recent-transactions').innerHTML = '<div class="item">Cleared</div>';
+        }
+
+        // Auto-load on page load
+        window.onload = function() {
+            console.log('Page loaded, testing API...');
+            testAPI();
+        };
+    </script>
+</body>
+</html> 

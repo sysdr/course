@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quorum Consistency Control Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        .metrics { background: #f8f9fa; }
+        .form-group { margin-bottom: 15px; }
+        input, select, button { padding: 8px; margin: 5px; }
+        button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .result { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🗳️ Quorum Consistency Control Demo</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h3>Consistency Configuration</h3>
+            <form id="consistencyForm">
+                <div class="form-group">
+                    <label>Consistency Level:</label>
+                    <select id="consistencyLevel">
+                        <option value="strong">Strong (R=N, W=N)</option>
+                        <option value="balanced" selected>Balanced (R=majority, W=majority)</option>
+                        <option value="eventual">Eventual (R=1, W=1)</option>
+                    </select>
+                    <button type="submit">Update</button>
+                </div>
+            </form>
+            
+            <h3>Write Operation</h3>
+            <form id="writeForm">
+                <div class="form-group">
+                    <input type="text" id="writeKey" placeholder="Key" required>
+                    <input type="text" id="writeValue" placeholder="Value" required>
+                    <button type="submit">Write</button>
+                </div>
+            </form>
+            
+            <h3>Read Operation</h3>
+            <form id="readForm">
+                <div class="form-group">
+                    <input type="text" id="readKey" placeholder="Key" required>
+                    <button type="submit">Read</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="panel metrics">
+            <h3>System Metrics</h3>
+            <div id="metrics">
+                <p>Total Reads: <span id="totalReads">{{ metrics.total_reads }}</span></p>
+                <p>Total Writes: <span id="totalWrites">{{ metrics.total_writes }}</span></p>
+                <p>Failed Reads: <span id="failedReads">{{ metrics.failed_reads }}</span></p>
+                <p>Failed Writes: <span id="failedWrites">{{ metrics.failed_writes }}</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <h3>Operation Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(operation, result, success) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>${operation}:</strong> ${success ? 'Success' : 'Failed'}<br>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+
+        function updateMetrics() {
+            fetch('/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalReads').textContent = data.total_reads;
+                    document.getElementById('totalWrites').textContent = data.total_writes;
+                    document.getElementById('failedReads').textContent = data.failed_reads;
+                    document.getElementById('failedWrites').textContent = data.failed_writes;
+                });
+        }
+
+        document.getElementById('consistencyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const level = document.getElementById('consistencyLevel').value;
+            const formData = new FormData();
+            formData.append('level', level);
+            
+            const response = await fetch('/consistency', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            addResult('Consistency Change', result, response.ok);
+        });
+
+        document.getElementById('writeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const key = document.getElementById('writeKey').value;
+            const value = document.getElementById('writeValue').value;
+            
+            const formData = new FormData();
+            formData.append('key', key);
+            formData.append('value', value);
+            
+            const response = await fetch('/write', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            addResult('Write', result, result.success);
+            updateMetrics();
+            
+            // Clear form
+            document.getElementById('writeKey').value = '';
+            document.getElementById('writeValue').value = '';
+        });
+
+        document.getElementById('readForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const key = document.getElementById('readKey').value;
+            
+            const formData = new FormData();
+            formData.append('key', key);
+            
+            const response = await fetch('/read', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            addResult('Read', result, result.success);
+            updateMetrics();
+            
+            // Clear form
+            document.getElementById('readKey').value = '';
+        });
+
+        // Update metrics every 5 seconds
+        setInterval(updateMetrics, 5000);
+    </script>
+</body>
+</html>

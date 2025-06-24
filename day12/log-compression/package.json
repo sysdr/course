@@ -1,0 +1,24 @@
+{
+  "name": "log-compression-service",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest",
+    "dev": "nodemon src/server.js",
+    "benchmark": "node benchmark/compression.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "zlib": "^1.0.5",
+    "prom-client": "^14.2.0",
+    "lodash": "^4.17.21",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3",
+    "benchmark": "^2.1.4"
+  }
+}

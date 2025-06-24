@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  partition-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.offline
+    container_name: partition-1
+    ports:
+      - "8081:8081"
+    command: ["python3", "run_partition_server.py", "partition_1", "8081"]
+    volumes:
+      - partition1_data:/app/data
+    networks:
+      - query_network
+
+  partition-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.offline
+    container_name: partition-2
+    ports:
+      - "8082:8082"
+    command: ["python3", "run_partition_server.py", "partition_2", "8082"]
+    volumes:
+      - partition2_data:/app/data
+    networks:
+      - query_network
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.offline
+    container_name: query-coordinator
+    ports:
+      - "8080:8080"
+    depends_on:
+      - partition-1
+      - partition-2
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - query_network
+
+volumes:
+  partition1_data:
+  partition2_data:
+
+networks:
+  query_network:
+    driver: bridge

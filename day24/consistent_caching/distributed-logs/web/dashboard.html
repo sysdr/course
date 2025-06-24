@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Log Storage - Consistent Hashing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .metric-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-value { font-size: 2em; font-weight: bold; color: #2196F3; }
+        .metric-label { color: #666; margin-top: 5px; }
+        .ring-viz { width: 300px; height: 300px; margin: 20px auto; }
+        .node-list { list-style: none; padding: 0; }
+        .node-item { background: #e3f2fd; padding: 10px; margin: 5px 0; border-radius: 4px; border-left: 4px solid #2196F3; }
+        .log-entry { background: #f9f9f9; padding: 8px; margin: 4px 0; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        .controls { margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; background: #2196F3; color: white; cursor: pointer; }
+        .btn:hover { background: #1976D2; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .status-online { background: #4CAF50; }
+        .status-offline { background: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Distributed Log Storage Dashboard</h1>
+            <p>Day 24: Consistent Hashing Implementation</p>
+            <div id="cluster-status">Loading cluster status...</div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="total-nodes">0</div>
+                <div class="metric-label">Active Storage Nodes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="total-logs">0</div>
+                <div class="metric-label">Total Log Entries</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="total-partitions">0</div>
+                <div class="metric-label">Active Partitions</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="disk-usage">0 MB</div>
+                <div class="metric-label">Total Disk Usage</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="addTestNode()">➕ Add Test Node</button>
+            <button class="btn" onclick="generateTestLogs()">📝 Generate Test Logs</button>
+            <button class="btn" onclick="refreshDashboard()">🔄 Refresh</button>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>🎯 Hash Ring Visualization</h3>
+                <svg class="ring-viz" id="ring-visualization">
+                    <circle cx="150" cy="150" r="120" fill="none" stroke="#ddd" stroke-width="2"/>
+                    <text x="150" y="30" text-anchor="middle" font-size="12" fill="#666">Ring Visualization</text>
+                </svg>
+            </div>
+
+            <div class="metric-card">
+                <h3>📊 Load Distribution</h3>
+                <div id="load-distribution">
+                    <div class="loading">Calculating load distribution...</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🖥️ Storage Nodes</h3>
+                <ul class="node-list" id="node-list">
+                    <li class="loading">Loading node information...</li>
+                </ul>
+            </div>
+
+            <div class="metric-card">
+                <h3>📝 Recent Log Entries</h3>
+                <div id="recent-logs">
+                    <div class="loading">Loading recent logs...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated cluster data (in production, this would come from the cluster coordinator)
+        let clusterState = {
+            nodes: [
+                { id: 'node-1', status: 'online', logs: 1250, partitions: 15, diskUsageMB: 45.2 },
+                { id: 'node-2', status: 'online', logs: 1180, partitions: 14, diskUsageMB: 41.8 },
+                { id: 'node-3', status: 'online', logs: 1320, partitions: 16, diskUsageMB: 48.6 }
+            ],
+            ringState: {
+                totalVirtualNodes: 450,
+                loadDistribution: {
+                    'node-1': 33.2,
+                    'node-2': 32.1,
+                    'node-3': 34.7
+                }
+            },
+            recentLogs: [
+                { id: 'log-1001', source: 'web-server', level: 'INFO', message: 'User authenticated', timestamp: Date.now() - 1000 },
+                { id: 'log-1002', source: 'database', level: 'WARN', message: 'Slow query detected', timestamp: Date.now() - 2000 },
+                { id: 'log-1003', source: 'api-gateway', level: 'ERROR', message: 'Rate limit exceeded', timestamp: Date.now() - 3000 }
+            ]
+        };
+
+        function updateDashboard() {
+            // Update summary metrics
+            document.getElementById('total-nodes').textContent = clusterState.nodes.length;
+            
+            const totalLogs = clusterState.nodes.reduce((sum, node) => sum + node.logs, 0);
+            document.getElementById('total-logs').textContent = totalLogs.toLocaleString();
+            
+            const totalPartitions = clusterState.nodes.reduce((sum, node) => sum + node.partitions, 0);
+            document.getElementById('total-partitions').textContent = totalPartitions;
+            
+            const totalDiskUsage = clusterState.nodes.reduce((sum, node) => sum + node.diskUsageMB, 0);
+            document.getElementById('disk-usage').textContent = totalDiskUsage.toFixed(1) + ' MB';
+
+            // Update cluster status
+            const onlineNodes = clusterState.nodes.filter(n => n.status === 'online').length;
+            document.getElementById('cluster-status').innerHTML = 
+                `<span class="status-indicator status-online"></span>Cluster Online - ${onlineNodes}/${clusterState.nodes.length} nodes active`;
+
+            // Update load distribution
+            const loadDistDiv = document.getElementById('load-distribution');
+            loadDistDiv.innerHTML = '';
+            for (const [nodeId, percentage] of Object.entries(clusterState.ringState.loadDistribution)) {
+                const div = document.createElement('div');
+                div.style.marginBottom = '8px';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${nodeId}</span>
+                        <span style="font-weight: bold;">${percentage.toFixed(1)}%</span>
+                    </div>
+                    <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: #2196F3; height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+                    </div>
+                `;
+                loadDistDiv.appendChild(div);
+            }
+
+            // Update node list
+            const nodeList = document.getElementById('node-list');
+            nodeList.innerHTML = '';
+            clusterState.nodes.forEach(node => {
+                const li = document.createElement('li');
+                li.className = 'node-item';
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span class="status-indicator status-${node.status}"></span>
+                            <strong>${node.id}</strong>
+                        </div>
+                        <span style="font-size: 0.9em; color: #666;">${node.status}</span>
+                    </div>
+                    <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                        ${node.logs.toLocaleString()} logs • ${node.partitions} partitions • ${node.diskUsageMB.toFixed(1)} MB
+                    </div>
+                `;
+                nodeList.appendChild(li);
+            });
+
+            // Update recent logs
+            const recentLogsDiv = document.getElementById('recent-logs');
+            recentLogsDiv.innerHTML = '';
+            clusterState.recentLogs.slice(-5).reverse().forEach(log => {
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                const timeStr = new Date(log.timestamp).toLocaleTimeString();
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>${log.level}</strong> ${log.source}</span>
+                        <span style="color: #666; font-size: 0.8em;">${timeStr}</span>
+                    </div>
+                    <div style="margin-top: 2px;">${log.message}</div>
+                `;
+                recentLogsDiv.appendChild(div);
+            });
+
+            // Update ring visualization
+            updateRingVisualization();
+        }
+
+        function updateRingVisualization() {
+            const svg = document.getElementById('ring-visualization');
+            
+            // Clear existing nodes
+            const existingNodes = svg.querySelectorAll('.ring-node');
+            existingNodes.forEach(node => node.remove());
+
+            // Add nodes to ring
+            clusterState.nodes.forEach((node, index) => {
+                const angle = (index / clusterState.nodes.length) * 2 * Math.PI;
+                const x = 150 + 100 * Math.cos(angle - Math.PI/2);
+                const y = 150 + 100 * Math.sin(angle - Math.PI/2);
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', '8');
+                circle.setAttribute('fill', node.status === 'online' ? '#4CAF50' : '#f44336');
+                circle.setAttribute('class', 'ring-node');
+                svg.appendChild(circle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y - 15);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('fill', '#333');
+                text.setAttribute('class', 'ring-node');
+                text.textContent = node.id;
+                svg.appendChild(text);
+            });
+        }
+
+        function addTestNode() {
+            const nodeId = `node-${clusterState.nodes.length + 1}`;
+            const newNode = {
+                id: nodeId,
+                status: 'online',
+                logs: Math.floor(Math.random() * 500) + 500,
+                partitions: Math.floor(Math.random() * 5) + 10,
+                diskUsageMB: Math.random() * 20 + 30
+            };
+            
+            clusterState.nodes.push(newNode);
+            
+            // Recalculate load distribution
+            const nodeCount = clusterState.nodes.length;
+            const baseLoad = 100 / nodeCount;
+            clusterState.ringState.loadDistribution = {};
+            clusterState.nodes.forEach((node, index) => {
+                const variation = (Math.random() - 0.5) * 10; // ±5% variation
+                clusterState.ringState.loadDistribution[node.id] = baseLoad + variation;
+            });
+            
+            updateDashboard();
+            alert(`Added ${nodeId} to cluster. Load rebalancing in progress...`);
+        }
+
+        function generateTestLogs() {
+            const sources = ['web-server', 'database', 'api-gateway', 'auth-service', 'cache'];
+            const levels = ['INFO', 'WARN', 'ERROR', 'DEBUG'];
+            const messages = [
+                'Request processed successfully',
+                'Database connection established',
+                'Cache miss detected',
+                'User authentication failed',
+                'Memory usage threshold exceeded',
+                'API rate limit approaching'
+            ];
+
+            for (let i = 0; i < 10; i++) {
+                const log = {
+                    id: `log-${Date.now()}-${i}`,
+                    source: sources[Math.floor(Math.random() * sources.length)],
+                    level: levels[Math.floor(Math.random() * levels.length)],
+                    message: messages[Math.floor(Math.random() * messages.length)],
+                    timestamp: Date.now() - Math.random() * 60000
+                };
+                
+                clusterState.recentLogs.push(log);
+                
+                // Update random node's log count
+                const randomNode = clusterState.nodes[Math.floor(Math.random() * clusterState.nodes.length)];
+                randomNode.logs += 1;
+                randomNode.diskUsageMB += Math.random() * 0.1;
+            }
+
+            // Keep only recent logs
+            clusterState.recentLogs = clusterState.recentLogs.slice(-20);
+            
+            updateDashboard();
+            alert('Generated 10 test log entries across the cluster');
+        }
+
+        function refreshDashboard() {
+            // Simulate small changes in metrics
+            clusterState.nodes.forEach(node => {
+                node.logs += Math.floor(Math.random() * 10);
+                node.diskUsageMB += Math.random() * 0.5;
+            });
+            
+            updateDashboard();
+        }
+
+        // Initial dashboard update
+        updateDashboard();
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            // Simulate small metric changes
+            clusterState.nodes.forEach(node => {
+                node.logs += Math.floor(Math.random() * 3);
+                node.diskUsageMB += Math.random() * 0.1;
+            });
+            updateDashboard();
+        }, 30000);
+    </script>
+</body>
+</html>

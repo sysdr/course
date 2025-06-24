@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Log Compaction Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 1.1em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .activity-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .activity-header {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .update-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .update-item:last-child {
+            border-bottom: none;
+        }
+        
+        .update-info {
+            flex: 1;
+        }
+        
+        .update-user {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .update-type {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .update-meta {
+            font-size: 0.8em;
+            color: #999;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Kafka Log Compaction Dashboard</h1>
+            <p>Real-time monitoring of user profile state management</p>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="total-messages">0</div>
+                <div class="metric-label">Total Messages</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="unique-keys">0</div>
+                <div class="metric-label">Unique Keys</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="compaction-ratio">0%</div>
+                <div class="metric-label">Compaction Ratio</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value" id="storage-saved">0%</div>
+                <div class="metric-label">Storage Saved</div>
+            </div>
+        </div>
+        
+        <div class="activity-section">
+            <div class="activity-header">
+                📊 Recent Profile Updates
+                <div class="status-indicator"></div>
+            </div>
+            <div id="recent-updates">
+                <div class="update-item">
+                    <div class="update-info">
+                        <div class="update-user">Waiting for data...</div>
+                        <div class="update-type">System initializing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="refresh-indicator">
+        🔄 Auto-refresh: 3s
+    </div>
+
+    <script>
+        function updateDashboard() {
+            fetch('/api/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-messages').textContent = data.total_messages.toLocaleString();
+                    document.getElementById('unique-keys').textContent = data.unique_keys.toLocaleString();
+                    
+                    const ratio = (data.compaction_ratio * 100).toFixed(1);
+                    document.getElementById('compaction-ratio').textContent = ratio + '%';
+                    
+                    const saved = (100 - (data.compaction_ratio * 100)).toFixed(1);
+                    document.getElementById('storage-saved').textContent = saved + '%';
+                    
+                    // Update recent updates
+                    const updatesContainer = document.getElementById('recent-updates');
+                    updatesContainer.innerHTML = '';
+                    
+                    if (data.recent_updates && data.recent_updates.length > 0) {
+                        data.recent_updates.slice(-10).reverse().forEach(update => {
+                            const item = document.createElement('div');
+                            item.className = 'update-item';
+                            item.innerHTML = `
+                                <div class="update-info">
+                                    <div class="update-user">${update.userId}</div>
+                                    <div class="update-type">${update.updateType}</div>
+                                    <div class="update-meta">Partition: ${update.partition}, Offset: ${update.offset}</div>
+                                </div>
+                            `;
+                            updatesContainer.appendChild(item);
+                        });
+                    } else {
+                        updatesContainer.innerHTML = '<div class="update-item"><div class="update-info"><div class="update-user">No recent updates</div></div></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching metrics:', error);
+                });
+        }
+        
+        // Update every 3 seconds
+        setInterval(updateDashboard, 3000);
+        updateDashboard(); // Initial load
+    </script>
+</body>
+</html>

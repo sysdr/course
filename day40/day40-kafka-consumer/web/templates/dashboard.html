@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Consumer Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .metric-unit { font-size: 14px; color: #666; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-running { background-color: #28a745; }
+        .status-stopped { background-color: #dc3545; }
+        .analytics-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .analytics-table th, .analytics-table td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .analytics-table th { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Kafka Consumer Dashboard</h1>
+            <p>Real-time monitoring for distributed log processing</p>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Consumer Status</div>
+                <div>
+                    <span id="status-indicator" class="status-indicator"></span>
+                    <span id="consumer-status">Connecting...</span>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Messages Processed</div>
+                <div class="metric-value" id="processed-count">0</div>
+                <div class="metric-unit">total messages</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Throughput</div>
+                <div class="metric-value" id="throughput">0</div>
+                <div class="metric-unit">messages/second</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Success Rate</div>
+                <div class="metric-value" id="success-rate">0%</div>
+                <div class="metric-unit">processing success</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">Request Rate</div>
+                <div class="metric-value" id="request-rate">0</div>
+                <div class="metric-unit">requests/second</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-title">P95 Response Time</div>
+                <div class="metric-value" id="p95-response">0</div>
+                <div class="metric-unit">milliseconds</div>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Throughput Over Time</h3>
+                <div id="throughput-chart"></div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Response Time Distribution</h3>
+                <div id="response-time-chart"></div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Endpoint Analytics</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Requests</th>
+                        <th>Avg Response Time</th>
+                        <th>Error Rate</th>
+                    </tr>
+                </thead>
+                <tbody id="endpoint-analytics">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Geographic Distribution</h3>
+            <div id="geo-chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection for real-time updates
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        
+        // Chart data storage
+        let throughputData = [];
+        let responseTimeData = [];
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            updateDashboard(data);
+        };
+        
+        function updateDashboard(data) {
+            const stats = data.stats;
+            const analytics = data.analytics;
+            const metrics = data.metrics;
+            
+            // Update status indicators
+            document.getElementById('consumer-status').textContent = stats.running ? 'Running' : 'Stopped';
+            document.getElementById('status-indicator').className = 
+                'status-indicator ' + (stats.running ? 'status-running' : 'status-stopped');
+            
+            // Update metrics
+            document.getElementById('processed-count').textContent = stats.processed_count.toLocaleString();
+            document.getElementById('throughput').textContent = metrics.recent_throughput_msg_per_sec.toFixed(1);
+            document.getElementById('success-rate').textContent = stats.success_rate.toFixed(1) + '%';
+            document.getElementById('request-rate').textContent = analytics.requests_per_second.toFixed(1);
+            document.getElementById('p95-response').textContent = analytics.response_time_percentiles.p95.toFixed(0);
+            
+            // Update charts
+            updateThroughputChart(data.timestamp, metrics.recent_throughput_msg_per_sec);
+            updateResponseTimeChart(analytics.response_time_percentiles);
+            updateEndpointAnalytics(analytics.endpoint_stats);
+            updateGeoChart(analytics.geographic_distribution);
+        }
+        
+        function updateThroughputChart(timestamp, throughput) {
+            throughputData.push({x: new Date(timestamp * 1000), y: throughput});
+            if (throughputData.length > 50) throughputData.shift();
+            
+            const trace = {
+                x: throughputData.map(d => d.x),
+                y: throughputData.map(d => d.y),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Throughput'
+            };
+            
+            Plotly.newPlot('throughput-chart', [trace], {
+                xaxis: {title: 'Time'},
+                yaxis: {title: 'Messages/Second'},
+                margin: {t: 20}
+            });
+        }
+        
+        function updateResponseTimeChart(percentiles) {
+            const trace = {
+                x: ['P50', 'P95', 'P99'],
+                y: [percentiles.p50, percentiles.p95, percentiles.p99],
+                type: 'bar',
+                marker: {color: ['#007bff', '#ffc107', '#dc3545']}
+            };
+            
+            Plotly.newPlot('response-time-chart', [trace], {
+                xaxis: {title: 'Percentile'},
+                yaxis: {title: 'Response Time (ms)'},
+                margin: {t: 20}
+            });
+        }
+        
+        function updateEndpointAnalytics(endpointStats) {
+            const tbody = document.getElementById('endpoint-analytics');
+            tbody.innerHTML = '';
+            
+            for (const [endpoint, stats] of Object.entries(endpointStats)) {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = endpoint;
+                row.insertCell(1).textContent = stats.total_requests.toLocaleString();
+                row.insertCell(2).textContent = stats.avg_response_time.toFixed(1) + ' ms';
+                row.insertCell(3).textContent = stats.error_rate.toFixed(1) + '%';
+            }
+        }
+        
+        function updateGeoChart(geoDistribution) {
+            const trace = {
+                labels: Object.keys(geoDistribution),
+                values: Object.values(geoDistribution),
+                type: 'pie'
+            };
+            
+            Plotly.newPlot('geo-chart', [trace], {
+                margin: {t: 20}
+            });
+        }
+        
+        // Initialize empty charts
+        updateThroughputChart(Date.now() / 1000, 0);
+        updateResponseTimeChart({p50: 0, p95: 0, p99: 0});
+        updateGeoChart({});
+    </script>
+</body>
+</html>

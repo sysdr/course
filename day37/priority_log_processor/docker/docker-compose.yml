@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  priority-queue:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NUM_WORKERS=6
+      - MAX_QUEUE_SIZE=10000
+      - DEMO_MESSAGE_RATE=50
+    volumes:
+      - ../src:/app/src
+      - ../demo:/app/demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  log-generator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["python", "demo/log_generator.py"]
+    depends_on:
+      - priority-queue
+    volumes:
+      - ../src:/app/src
+      - ../demo:/app/demo

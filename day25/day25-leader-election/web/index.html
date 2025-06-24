@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raft Leader Election Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        .cluster-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .node-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .node-leader { border-left: 5px solid #e74c3c; }
+        .node-candidate { border-left: 5px solid #f39c12; }
+        .node-follower { border-left: 5px solid #27ae60; }
+        .controls { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-primary { background: #3498db; color: white; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; }
+        .leader { background: #e74c3c; }
+        .candidate { background: #f39c12; }
+        .follower { background: #27ae60; }
+        .log { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ Raft Leader Election Demo</h1>
+            <p>Watch distributed consensus in action</p>
+        </div>
+        
+        <div class="cluster-status" id="cluster-status">
+            <!-- Nodes will be populated here -->
+        </div>
+        
+        <div class="controls">
+            <h3>Cluster Controls</h3>
+            <button class="btn-primary" onclick="refreshStatus()">🔄 Refresh Status</button>
+            <button class="btn-danger" onclick="simulateFailure()">💥 Simulate Leader Failure</button>
+            <button class="btn-success" onclick="startElection()">🗳️ Force Election</button>
+            <button class="btn-primary" onclick="clearLogs()">🧹 Clear Logs</button>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <h3>Election Log</h3>
+            <div class="log" id="election-log"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentLeader = null;
+        
+        // Simulate cluster status
+        let clusterData = {
+            "cluster_size": 5,
+            "nodes": {
+                "node-1": {"node_id": "node-1", "state": "leader", "term": 3, "voted_for": "node-1", "peers": ["node-2", "node-3", "node-4", "node-5"], "votes_received": 0, "is_leader": true},
+                "node-2": {"node_id": "node-2", "state": "follower", "term": 3, "voted_for": "node-1", "peers": ["node-1", "node-3", "node-4", "node-5"], "votes_received": 0, "is_leader": false},
+                "node-3": {"node_id": "node-3", "state": "follower", "term": 3, "voted_for": "node-1", "peers": ["node-1", "node-2", "node-4", "node-5"], "votes_received": 0, "is_leader": false},
+                "node-4": {"node_id": "node-4", "state": "follower", "term": 3, "voted_for": "node-1", "peers": ["node-1", "node-2", "node-3", "node-5"], "votes_received": 0, "is_leader": false},
+                "node-5": {"node_id": "node-5", "state": "follower", "term": 3, "voted_for": "node-1", "peers": ["node-1", "node-2", "node-3", "node-4"], "votes_received": 0, "is_leader": false}
+            },
+            "leader": "node-1",
+            "timestamp": Date.now()
+        };
+        
+        function renderClusterStatus() {
+            const container = document.getElementById('cluster-status');
+            container.innerHTML = '';
+            
+            Object.values(clusterData.nodes).forEach(node => {
+                const nodeCard = document.createElement('div');
+                nodeCard.className = `node-card node-${node.state}`;
+                
+                nodeCard.innerHTML = `
+                    <h4>${node.node_id}</h4>
+                    <div class="status-badge ${node.state}">${node.state.toUpperCase()}</div>
+                    <p><strong>Term:</strong> ${node.term}</p>
+                    <p><strong>Voted For:</strong> ${node.voted_for || 'None'}</p>
+                    ${node.state === 'candidate' ? `<p><strong>Votes:</strong> ${node.votes_received}/${node.peers.length + 1}</p>` : ''}
+                    <p><strong>Peers:</strong> ${node.peers.length}</p>
+                `;
+                
+                container.appendChild(nodeCard);
+            });
+        }
+        
+        function addLog(message) {
+            const log = document.getElementById('election-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function refreshStatus() {
+            renderClusterStatus();
+            addLog('📊 Cluster status refreshed');
+        }
+        
+        function simulateFailure() {
+            const leader = clusterData.leader;
+            if (leader) {
+                // Remove leader
+                clusterData.nodes[leader].state = 'follower';
+                clusterData.leader = null;
+                
+                // Start election
+                setTimeout(() => {
+                    startElection();
+                }, 1000);
+                
+                addLog(`💥 Node ${leader} failed - triggering election`);
+                renderClusterStatus();
+            }
+        }
+        
+        function startElection() {
+            const candidates = Object.keys(clusterData.nodes).filter(id => 
+                clusterData.nodes[id].state === 'follower'
+            );
+            
+            if (candidates.length === 0) return;
+            
+            const newCandidate = candidates[Math.floor(Math.random() * candidates.length)];
+            const newTerm = Math.max(...Object.values(clusterData.nodes).map(n => n.term)) + 1;
+            
+            // Make candidate
+            clusterData.nodes[newCandidate].state = 'candidate';
+            clusterData.nodes[newCandidate].term = newTerm;
+            clusterData.nodes[newCandidate].voted_for = newCandidate;
+            clusterData.nodes[newCandidate].votes_received = 1;
+            
+            addLog(`🗳️ ${newCandidate} started election for term ${newTerm}`);
+            renderClusterStatus();
+            
+            // Simulate voting
+            setTimeout(() => {
+                const voters = Object.keys(clusterData.nodes).filter(id => id !== newCandidate);
+                let votes = 1; // Self vote
+                
+                voters.forEach(voter => {
+                    if (Math.random() > 0.3) { // 70% chance to vote yes
+                        votes++;
+                        addLog(`✅ ${voter} voted for ${newCandidate}`);
+                    } else {
+                        addLog(`❌ ${voter} rejected ${newCandidate}`);
+                    }
+                });
+                
+                if (votes > Object.keys(clusterData.nodes).length / 2) {
+                    // Won election
+                    clusterData.nodes[newCandidate].state = 'leader';
+                    clusterData.leader = newCandidate;
+                    
+                    // Update all other nodes
+                    Object.keys(clusterData.nodes).forEach(id => {
+                        if (id !== newCandidate) {
+                            clusterData.nodes[id].state = 'follower';
+                            clusterData.nodes[id].term = newTerm;
+                            clusterData.nodes[id].voted_for = newCandidate;
+                        }
+                    });
+                    
+                    addLog(`🎉 ${newCandidate} became leader with ${votes}/${Object.keys(clusterData.nodes).length} votes`);
+                } else {
+                    // Lost election
+                    clusterData.nodes[newCandidate].state = 'follower';
+                    addLog(`😞 ${newCandidate} lost election with ${votes}/${Object.keys(clusterData.nodes).length} votes`);
+                }
+                
+                renderClusterStatus();
+            }, 2000);
+        }
+        
+        function clearLogs() {
+            document.getElementById('election-log').innerHTML = '';
+        }
+        
+        // Initialize
+        renderClusterStatus();
+        addLog('🚀 Raft cluster initialized');
+        addLog('👑 node-1 is the current leader');
+    </script>
+</body>
+</html>

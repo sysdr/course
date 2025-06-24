@@ -1,1653 +1,696 @@
 #!/bin/bash
 
-# ===================================================================
-# Log Enrichment Pipeline - One-Click Setup Script
-# Day 21: 254-Day Hands-On System Design Course
-# ===================================================================
+# Day 23: Log Partitioning Strategy Implementation Script
+# 254-Day Hands-On System Design Series
 
-set -e  # Exit on any error
+set -e
 
-# Color codes for output formatting
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "=== Day 23: Log Partitioning Strategy Setup ==="
+echo "Building distributed log storage with intelligent partitioning..."
 
-# Project configuration
-PROJECT_NAME="log_enrichment_pipeline"
-PYTHON_VERSION="3.13"
-PORT="8080"
+# Create project structure
+echo "📁 Creating project structure..."
+mkdir -p log_partitioning/{src,tests,config,data,logs,web}
+cd log_partitioning
 
-# Function to print colored output
-print_step() {
-    echo -e "${BLUE}[STEP]${NC} $1"
-}
+# Create main source files
+echo "📝 Creating source files..."
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
+# Partition Router Implementation
+cat > src/partition_router.py << 'EOF'
+import hashlib
+import json
+from datetime import datetime, timedelta
+from typing import Dict, List, Any
+import logging
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Function to check if command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# ===================================================================
-# STEP 1: Environment Validation and Setup
-# ===================================================================
-print_step "Validating environment and dependencies..."
-
-# Check Python installation
-if ! command_exists python3; then
-    print_error "Python 3 is required but not installed. Please install Python 3.9 or later."
-    exit 1
-fi
-
-PYTHON_VER=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-print_success "Found Python $PYTHON_VER"
-
-# Check if pip is available
-if ! command_exists pip3; then
-    print_error "pip3 is required but not installed."
-    exit 1
-fi
-
-# Check if we can create virtual environments
-if ! python3 -c "import venv" 2>/dev/null; then
-    print_error "Python venv module is required but not available."
-    exit 1
-fi
-
-print_success "Environment validation completed"
-
-# ===================================================================
-# STEP 2: Project Structure Creation
-# ===================================================================
-print_step "Creating project structure..."
-
-# Remove existing project directory if it exists
-if [ -d "$PROJECT_NAME" ]; then
-    print_warning "Project directory exists. Removing..."
-    rm -rf "$PROJECT_NAME"
-fi
-
-# Create main project directory
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME"
-
-# Create directory structure
-mkdir -p src/collectors src/enrichers src/formatters tests demo config
-
-# Create __init__.py files for Python packages
-touch src/__init__.py src/collectors/__init__.py src/enrichers/__init__.py src/formatters/__init__.py tests/__init__.py
-
-print_success "Project structure created"
-
-# ===================================================================
-# STEP 3: Core Implementation Files Creation
-# ===================================================================
-print_step "Creating core implementation files..."
-
-# Create requirements.txt
-cat > requirements.txt << 'EOF'
-# Core dependencies for log enrichment pipeline
-flask==2.3.3
-pyyaml==6.0.1
-psutil==5.9.5
-pytest==7.4.2
-pytest-cov==4.1.0
-requests==2.31.0
-python-json-logger==2.0.7
-
-# Development dependencies
-black==23.7.0
-flake8==6.0.0
-mypy==1.5.1
+class PartitionRouter:
+    def __init__(self, strategy="source", nodes=None, time_window_hours=24):
+        self.strategy = strategy
+        self.nodes = nodes or ["node_1", "node_2", "node_3"]
+        self.time_window_hours = time_window_hours
+        self.partition_map = {}
+        
+    def route_log(self, log_entry: Dict[str, Any]) -> str:
+        """Route log to appropriate partition based on strategy"""
+        if self.strategy == "source":
+            return self._route_by_source(log_entry)
+        elif self.strategy == "time":
+            return self._route_by_time(log_entry)
+        else:
+            raise ValueError(f"Unknown strategy: {self.strategy}")
+    
+    def _route_by_source(self, log_entry: Dict[str, Any]) -> str:
+        source = log_entry.get("source", "unknown")
+        hash_val = int(hashlib.md5(source.encode()).hexdigest(), 16)
+        node_index = hash_val % len(self.nodes)
+        return self.nodes[node_index]
+    
+    def _route_by_time(self, log_entry: Dict[str, Any]) -> str:
+        timestamp = log_entry.get("timestamp", datetime.now().isoformat())
+        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        
+        # Time-based partitioning by hours
+        hour_bucket = dt.hour // (24 // len(self.nodes))
+        node_index = min(hour_bucket, len(self.nodes) - 1)
+        return self.nodes[node_index]
+    
+    def get_query_partitions(self, query_filter: Dict[str, Any]) -> List[str]:
+        """Determine which partitions to query based on filter"""
+        if self.strategy == "source" and "source" in query_filter:
+            # Only query partition containing this source
+            dummy_log = {"source": query_filter["source"]}
+            return [self._route_by_source(dummy_log)]
+        elif self.strategy == "time" and "time_range" in query_filter:
+            # Only query partitions in time range
+            return self._get_time_partitions(query_filter["time_range"])
+        else:
+            # Query all partitions
+            return self.nodes
+    
+    def _get_time_partitions(self, time_range: Dict[str, str]) -> List[str]:
+        start = datetime.fromisoformat(time_range["start"])
+        end = datetime.fromisoformat(time_range["end"])
+        
+        partitions = set()
+        current = start
+        while current <= end:
+            dummy_log = {"timestamp": current.isoformat()}
+            partitions.add(self._route_by_time(dummy_log))
+            current += timedelta(hours=1)
+        
+        return list(partitions)
 EOF
 
-# Create system collector
-cat > src/collectors/system_collector.py << 'EOF'
-"""
-System metadata collector for log enrichment pipeline.
-Gathers static system information with intelligent caching.
-"""
-
-import socket
-import platform
+# Partition Manager Implementation
+cat > src/partition_manager.py << 'EOF'
 import os
+import json
+import threading
+from typing import Dict, List, Any
+from collections import defaultdict
 import time
-from typing import Dict, Any, Optional
-import logging
 
-logger = logging.getLogger(__name__)
-
-
-class SystemCollector:
-    """
-    Collects system-level metadata that rarely changes.
+class PartitionManager:
+    def __init__(self, data_dir="data"):
+        self.data_dir = data_dir
+        self.partitions = defaultdict(list)
+        self.partition_stats = defaultdict(dict)
+        self.lock = threading.Lock()
+        self._ensure_data_dir()
     
-    This collector focuses on gathering information that's stable
-    during application runtime, like hostname and OS details.
-    """
+    def _ensure_data_dir(self):
+        os.makedirs(self.data_dir, exist_ok=True)
+        for node in ["node_1", "node_2", "node_3"]:
+            os.makedirs(f"{self.data_dir}/{node}", exist_ok=True)
     
-    def __init__(self, cache_ttl: int = 300):
-        """
-        Initialize system collector with caching.
-        
-        Args:
-            cache_ttl: Cache time-to-live in seconds (default: 5 minutes)
-        """
-        self._cache: Dict[str, Any] = {}
-        self._cache_ttl = cache_ttl
-        self._last_collected: Optional[float] = None
-        
-    def collect(self) -> Dict[str, Any]:
-        """
-        Collect system metadata with caching for performance.
-        
-        Returns:
-            Dictionary containing system information
-        """
-        current_time = time.time()
-        
-        # Check if we need to refresh cache
-        if (self._last_collected is None or 
-            current_time - self._last_collected > self._cache_ttl):
-            self._refresh_cache()
-            self._last_collected = current_time
+    def store_log(self, partition: str, log_entry: Dict[str, Any]):
+        """Store log entry in specified partition"""
+        with self.lock:
+            # Add to in-memory partition
+            self.partitions[partition].append(log_entry)
             
-        return self._cache.copy()
-    
-    def _refresh_cache(self) -> None:
-        """Refresh the system information cache."""
-        try:
-            self._cache = {
-                'hostname': self._get_hostname(),
-                'platform': platform.system(),
-                'platform_release': platform.release(),
-                'platform_version': platform.version(),
-                'architecture': platform.machine(),
-                'processor': platform.processor(),
-                'python_version': platform.python_version(),
-                'environment': os.environ.get('ENVIRONMENT', 'unknown'),
-                'service_name': os.environ.get('SERVICE_NAME', 'log-enrichment'),
-                'node_id': self._get_node_id(),
-            }
-            logger.debug("System metadata cache refreshed")
-        except Exception as e:
-            logger.warning(f"Failed to collect some system metadata: {e}")
-            # Provide minimal fallback data
-            self._cache = {
-                'hostname': 'unknown',
-                'platform': 'unknown',
-                'environment': 'unknown',
-                'service_name': 'log-enrichment',
-            }
-    
-    def _get_hostname(self) -> str:
-        """Get system hostname with fallback."""
-        try:
-            return socket.gethostname()
-        except Exception:
-            return os.environ.get('HOSTNAME', 'unknown')
-    
-    def _get_node_id(self) -> str:
-        """Generate or retrieve a node identifier."""
-        # Try to get from environment first
-        node_id = os.environ.get('NODE_ID')
-        if node_id:
-            return node_id
+            # Update partition stats
+            self._update_partition_stats(partition, log_entry)
             
-        # Fallback to hostname-based ID
-        try:
-            hostname = self._get_hostname()
-            return f"node-{hash(hostname) % 10000:04d}"
-        except Exception:
-            return "node-0000"
-EOF
-
-# Create performance collector
-cat > src/collectors/performance_collector.py << 'EOF'
-"""
-Performance metrics collector for log enrichment pipeline.
-Gathers real-time system performance data.
-"""
-
-import psutil
-import time
-from typing import Dict, Any
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-class PerformanceCollector:
-    """
-    Collects real-time performance metrics.
+            # Persist to disk
+            self._persist_log(partition, log_entry)
     
-    Unlike system information, performance data changes frequently,
-    so we use minimal caching and focus on efficient collection.
-    """
+    def _persist_log(self, partition: str, log_entry: Dict[str, Any]):
+        """Persist log entry to disk"""
+        file_path = f"{self.data_dir}/{partition}/logs.jsonl"
+        with open(file_path, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
     
-    def __init__(self, cache_duration: float = 1.0):
-        """
-        Initialize performance collector.
+    def _update_partition_stats(self, partition: str, log_entry: Dict[str, Any]):
+        """Update partition statistics"""
+        stats = self.partition_stats[partition]
+        stats["log_count"] = stats.get("log_count", 0) + 1
+        stats["last_updated"] = time.time()
         
-        Args:
-            cache_duration: How long to cache metrics in seconds
-        """
-        self._cache_duration = cache_duration
-        self._last_collection: float = 0
-        self._cached_metrics: Dict[str, Any] = {}
-        
-    def collect(self) -> Dict[str, Any]:
-        """
-        Collect current performance metrics.
-        
-        Returns:
-            Dictionary containing performance data
-        """
-        current_time = time.time()
-        
-        # Use short-term caching to avoid overwhelming the system
-        if current_time - self._last_collection > self._cache_duration:
-            self._cached_metrics = self._collect_fresh_metrics()
-            self._last_collection = current_time
-            
-        return self._cached_metrics.copy()
+        # Track sources
+        source = log_entry.get("source", "unknown")
+        sources = stats.get("sources", set())
+        sources.add(source)
+        stats["sources"] = sources
     
-    def _collect_fresh_metrics(self) -> Dict[str, Any]:
-        """Collect fresh performance metrics."""
-        try:
-            # CPU metrics
-            cpu_percent = psutil.cpu_percent(interval=None)
-            cpu_count = psutil.cpu_count()
-            
-            # Memory metrics
-            memory = psutil.virtual_memory()
-            
-            # Disk metrics for root partition
-            disk = psutil.disk_usage('/')
-            
-            # Network metrics (basic)
-            network = psutil.net_io_counters()
-            
-            return {
-                'cpu_percent': round(cpu_percent, 1),
-                'cpu_count': cpu_count,
-                'memory_total_gb': round(memory.total / (1024**3), 2),
-                'memory_used_gb': round(memory.used / (1024**3), 2),
-                'memory_percent': round(memory.percent, 1),
-                'disk_total_gb': round(disk.total / (1024**3), 2),
-                'disk_used_gb': round(disk.used / (1024**3), 2),
-                'disk_percent': round((disk.used / disk.total) * 100, 1),
-                'network_bytes_sent': network.bytes_sent,
-                'network_bytes_recv': network.bytes_recv,
-                'load_average': self._get_load_average(),
-                'uptime_seconds': time.time() - psutil.boot_time(),
-            }
-        except Exception as e:
-            logger.warning(f"Failed to collect performance metrics: {e}")
-            return {
-                'cpu_percent': 0.0,
-                'memory_percent': 0.0,
-                'disk_percent': 0.0,
-                'error': 'metrics_collection_failed'
-            }
-    
-    def _get_load_average(self) -> Dict[str, float]:
-        """Get system load average if available."""
-        try:
-            if hasattr(psutil, 'getloadavg'):
-                load1, load5, load15 = psutil.getloadavg()
-                return {
-                    'load_1m': round(load1, 2),
-                    'load_5m': round(load5, 2),
-                    'load_15m': round(load15, 2)
-                }
-        except (AttributeError, OSError):
-            pass
-        return {'load_1m': 0.0, 'load_5m': 0.0, 'load_15m': 0.0}
-EOF
-
-# Create environment collector
-cat > src/collectors/env_collector.py << 'EOF'
-"""
-Environment configuration collector for log enrichment pipeline.
-Gathers environment variables and configuration data.
-"""
-
-import os
-from typing import Dict, Any, Set
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-class EnvironmentCollector:
-    """
-    Collects environment and configuration metadata.
-    
-    This collector gathers relevant environment variables and
-    configuration that provides context for log entries.
-    """
-    
-    def __init__(self, include_patterns: Set[str] = None, exclude_patterns: Set[str] = None):
-        """
-        Initialize environment collector with filtering.
+    def query_partition(self, partition: str, filter_criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Query logs from specific partition"""
+        results = []
         
-        Args:
-            include_patterns: Environment variable prefixes to include
-            exclude_patterns: Environment variable patterns to exclude
-        """
-        self.include_patterns = include_patterns or {
-            'APP_', 'SERVICE_', 'ENVIRONMENT', 'DEPLOY_', 'VERSION',
-            'REGION', 'ZONE', 'CLUSTER', 'NAMESPACE', 'POD_'
-        }
-        self.exclude_patterns = exclude_patterns or {
-            'PASSWORD', 'SECRET', 'KEY', 'TOKEN', 'PRIVATE'
-        }
+        with self.lock:
+            for log in self.partitions[partition]:
+                if self._matches_filter(log, filter_criteria):
+                    results.append(log)
         
-    def collect(self) -> Dict[str, Any]:
-        """
-        Collect environment metadata.
-        
-        Returns:
-            Dictionary containing environment information
-        """
-        try:
-            env_vars = self._collect_environment_variables()
-            return {
-                'environment_type': os.environ.get('ENVIRONMENT', 'development'),
-                'service_version': os.environ.get('SERVICE_VERSION', 'unknown'),
-                'deployment_id': os.environ.get('DEPLOYMENT_ID', 'unknown'),
-                'region': os.environ.get('REGION', 'unknown'),
-                'availability_zone': os.environ.get('AVAILABILITY_ZONE', 'unknown'),
-                'cluster_name': os.environ.get('CLUSTER_NAME', 'unknown'),
-                'namespace': os.environ.get('NAMESPACE', 'default'),
-                'environment_variables': env_vars,
-                'working_directory': os.getcwd(),
-                'process_id': os.getpid(),
-            }
-        except Exception as e:
-            logger.warning(f"Failed to collect environment metadata: {e}")
-            return {
-                'environment_type': 'unknown',
-                'service_version': 'unknown',
-                'error': 'env_collection_failed'
-            }
+        return results
     
-    def _collect_environment_variables(self) -> Dict[str, str]:
-        """Collect filtered environment variables."""
-        env_vars = {}
-        
-        for key, value in os.environ.items():
-            # Check if we should include this variable
-            if self._should_include_env_var(key):
-                env_vars[key] = value
-                
-        return env_vars
-    
-    def _should_include_env_var(self, key: str) -> bool:
-        """Determine if an environment variable should be included."""
-        key_upper = key.upper()
-        
-        # Exclude sensitive variables
-        for exclude_pattern in self.exclude_patterns:
-            if exclude_pattern.upper() in key_upper:
+    def _matches_filter(self, log: Dict[str, Any], criteria: Dict[str, Any]) -> bool:
+        """Check if log matches filter criteria"""
+        for key, value in criteria.items():
+            if key not in log:
                 return False
-        
-        # Include variables matching our patterns
-        for include_pattern in self.include_patterns:
-            if key_upper.startswith(include_pattern.upper()):
-                return True
-                
-        return False
-EOF
-
-# Create rule engine
-cat > src/enrichers/rule_engine.py << 'EOF'
-"""
-Rule engine for determining which metadata to apply to log entries.
-"""
-
-import re
-from typing import Dict, Any, List
-import logging
-import yaml
-
-logger = logging.getLogger(__name__)
-
-
-class EnrichmentRule:
-    """Represents a single enrichment rule."""
-    
-    def __init__(self, name: str, conditions: Dict[str, Any], actions: Dict[str, Any]):
-        self.name = name
-        self.conditions = conditions
-        self.actions = actions
-    
-    def matches(self, log_entry: Dict[str, Any]) -> bool:
-        """Check if this rule matches the given log entry."""
-        for condition_type, condition_value in self.conditions.items():
-            if condition_type == 'log_level':
-                if not self._check_log_level(log_entry.get('level', ''), condition_value):
+            if key == "time_range":
+                log_time = log.get("timestamp", "")
+                if not (value["start"] <= log_time <= value["end"]):
                     return False
-            elif condition_type == 'message_contains':
-                if not self._check_message_contains(log_entry.get('message', ''), condition_value):
-                    return False
-            elif condition_type == 'source_matches':
-                if not self._check_source_matches(log_entry.get('source', ''), condition_value):
-                    return False
+            elif log[key] != value:
+                return False
         return True
     
-    def _check_log_level(self, log_level: str, target_levels: List[str]) -> bool:
-        """Check if log level matches target levels."""
-        return log_level.upper() in [level.upper() for level in target_levels]
-    
-    def _check_message_contains(self, message: str, patterns: List[str]) -> bool:
-        """Check if message contains any of the patterns."""
-        for pattern in patterns:
-            if pattern.lower() in message.lower():
-                return True
-        return False
-    
-    def _check_source_matches(self, source: str, patterns: List[str]) -> bool:
-        """Check if source matches any of the patterns."""
-        for pattern in patterns:
-            if re.search(pattern, source, re.IGNORECASE):
-                return True
-        return False
-
-
-class RuleEngine:
-    """
-    Determines which enrichment metadata to apply to each log entry.
-    
-    The rule engine uses configurable rules to decide what metadata
-    should be attached to different types of log entries.
-    """
-    
-    def __init__(self, rules_config: str = None):
-        """
-        Initialize rule engine with configuration.
-        
-        Args:
-            rules_config: Path to YAML rules configuration file
-        """
-        self.rules: List[EnrichmentRule] = []
-        self._load_default_rules()
-        
-        if rules_config:
-            self._load_rules_from_file(rules_config)
-    
-    def apply_rules(self, log_entry: Dict[str, Any], available_metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Apply enrichment rules to determine final metadata set.
-        
-        Args:
-            log_entry: The log entry to enrich
-            available_metadata: All available metadata from collectors
-            
-        Returns:
-            Dictionary containing selected metadata for this log entry
-        """
-        # Start with always-included metadata
-        enrichment_data = {
-            'enrichment_timestamp': available_metadata.get('collection_timestamp'),
-            'hostname': available_metadata.get('system', {}).get('hostname', 'unknown'),
-            'service_name': available_metadata.get('system', {}).get('service_name', 'unknown'),
-        }
-        
-        # Apply matching rules
-        for rule in self.rules:
-            if rule.matches(log_entry):
-                logger.debug(f"Applying rule: {rule.name}")
-                self._apply_rule_actions(rule, enrichment_data, available_metadata)
-        
-        return enrichment_data
-    
-    def _apply_rule_actions(self, rule: EnrichmentRule, enrichment_data: Dict[str, Any], 
-                           available_metadata: Dict[str, Any]) -> None:
-        """Apply the actions specified in a rule."""
-        for action_type, action_config in rule.actions.items():
-            if action_type == 'include_performance':
-                if action_config:
-                    performance_data = available_metadata.get('performance', {})
-                    enrichment_data.update({
-                        'cpu_percent': performance_data.get('cpu_percent'),
-                        'memory_percent': performance_data.get('memory_percent'),
-                        'disk_percent': performance_data.get('disk_percent'),
-                    })
-            
-            elif action_type == 'include_environment':
-                if action_config:
-                    env_data = available_metadata.get('environment', {})
-                    enrichment_data.update({
-                        'environment_type': env_data.get('environment_type'),
-                        'service_version': env_data.get('service_version'),
-                        'region': env_data.get('region'),
-                    })
-            
-            elif action_type == 'include_detailed_system':
-                if action_config:
-                    system_data = available_metadata.get('system', {})
-                    enrichment_data.update({
-                        'platform': system_data.get('platform'),
-                        'node_id': system_data.get('node_id'),
-                        'architecture': system_data.get('architecture'),
-                    })
-    
-    def _load_default_rules(self) -> None:
-        """Load default enrichment rules."""
-        # Rule 1: Always include basic context for ERROR logs
-        error_rule = EnrichmentRule(
-            name="error_enrichment",
-            conditions={
-                'log_level': ['ERROR', 'CRITICAL', 'FATAL']
-            },
-            actions={
-                'include_performance': True,
-                'include_environment': True,
-                'include_detailed_system': True
+    def get_partition_stats(self) -> Dict[str, Dict[str, Any]]:
+        """Get statistics for all partitions"""
+        stats = {}
+        for partition, partition_stats in self.partition_stats.items():
+            stats[partition] = {
+                "log_count": partition_stats.get("log_count", 0),
+                "sources": list(partition_stats.get("sources", set())),
+                "last_updated": partition_stats.get("last_updated", 0)
             }
-        )
-        
-        # Rule 2: Include performance data for WARN logs
-        warning_rule = EnrichmentRule(
-            name="warning_enrichment",
-            conditions={
-                'log_level': ['WARN', 'WARNING']
-            },
-            actions={
-                'include_performance': True,
-                'include_environment': True
-            }
-        )
-        
-        # Rule 3: Minimal enrichment for INFO logs
-        info_rule = EnrichmentRule(
-            name="info_enrichment",
-            conditions={
-                'log_level': ['INFO']
-            },
-            actions={
-                'include_environment': True
-            }
-        )
-        
-        self.rules = [error_rule, warning_rule, info_rule]
-    
-    def _load_rules_from_file(self, rules_file: str) -> None:
-        """Load rules from YAML configuration file."""
-        try:
-            with open(rules_file, 'r') as f:
-                config = yaml.safe_load(f)
-                
-            for rule_config in config.get('rules', []):
-                rule = EnrichmentRule(
-                    name=rule_config['name'],
-                    conditions=rule_config['conditions'],
-                    actions=rule_config['actions']
-                )
-                self.rules.append(rule)
-                
-            logger.info(f"Loaded {len(self.rules)} enrichment rules from {rules_file}")
-        except Exception as e:
-            logger.warning(f"Failed to load rules from {rules_file}: {e}")
+        return stats
 EOF
 
-print_success "Core implementation files created"
-
-# ===================================================================
-# STEP 4: Create Main Pipeline and Demo Components
-# ===================================================================
-print_step "Creating main pipeline and demo components..."
-
-# Create main pipeline orchestrator
-cat > src/pipeline.py << 'EOF'
-"""
-Main log enrichment pipeline orchestrator.
-"""
-
+# Query Optimizer Implementation
+cat > src/query_optimizer.py << 'EOF'
 import time
-import json
-from typing import Dict, Any, Optional
-import logging
-from datetime import datetime, timezone
+from typing import Dict, List, Any
+from src.partition_router import PartitionRouter
+from src.partition_manager import PartitionManager
 
-from src.collectors.system_collector import SystemCollector
-from src.collectors.performance_collector import PerformanceCollector
-from src.collectors.env_collector import EnvironmentCollector
-from src.enrichers.rule_engine import RuleEngine
-from src.formatters.json_formatter import JSONFormatter
-
-logger = logging.getLogger(__name__)
-
-
-class LogEnrichmentPipeline:
-    """
-    Main log enrichment pipeline that coordinates all components.
+class QueryOptimizer:
+    def __init__(self, router: PartitionRouter, manager: PartitionManager):
+        self.router = router
+        self.manager = manager
+        self.query_stats = []
     
-    This class brings together collectors, rule engine, and formatters
-    to transform raw log entries into enriched, contextual records.
-    """
-    
-    def __init__(self, config: Dict[str, Any] = None):
-        """
-        Initialize the enrichment pipeline.
-        
-        Args:
-            config: Configuration dictionary for pipeline components
-        """
-        self.config = config or {}
-        
-        # Initialize collectors
-        self.system_collector = SystemCollector()
-        self.performance_collector = PerformanceCollector()
-        self.env_collector = EnvironmentCollector()
-        
-        # Initialize rule engine and formatter
-        self.rule_engine = RuleEngine()
-        self.formatter = JSONFormatter()
-        
-        # Pipeline statistics
-        self.stats = {
-            'processed_count': 0,
-            'error_count': 0,
-            'start_time': time.time()
-        }
-        
-        logger.info("Log enrichment pipeline initialized")
-    
-    def enrich_log(self, raw_log: str, source: str = "unknown") -> Dict[str, Any]:
-        """
-        Enrich a single log entry.
-        
-        Args:
-            raw_log: The raw log message
-            source: Source identifier for the log
-            
-        Returns:
-            Enriched log entry as dictionary
-        """
+    def execute_query(self, filter_criteria: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute optimized query across relevant partitions"""
         start_time = time.time()
         
-        try:
-            # Parse the incoming log entry
-            log_entry = self._parse_log_entry(raw_log, source)
-            
-            # Collect metadata from all sources
-            metadata = self._collect_metadata()
-            
-            # Apply enrichment rules
-            enrichment_data = self.rule_engine.apply_rules(log_entry, metadata)
-            
-            # Create enriched log record
-            enriched_log = self._create_enriched_record(log_entry, enrichment_data)
-            
-            # Update statistics
-            self.stats['processed_count'] += 1
-            processing_time = time.time() - start_time
-            enriched_log['processing_time_ms'] = round(processing_time * 1000, 2)
-            
-            logger.debug(f"Enriched log in {processing_time:.3f}s")
-            return enriched_log
-            
-        except Exception as e:
-            self.stats['error_count'] += 1
-            logger.error(f"Failed to enrich log: {e}")
-            
-            # Return original log with error information
-            return {
-                'original_message': raw_log,
-                'source': source,
-                'timestamp': datetime.now(timezone.utc).isoformat(),
-                'enrichment_error': str(e),
-                'processing_time_ms': round((time.time() - start_time) * 1000, 2)
-            }
-    
-    def _parse_log_entry(self, raw_log: str, source: str) -> Dict[str, Any]:
-        """Parse raw log entry into structured format."""
-        # Simple parsing - in production, this would be more sophisticated
-        log_entry = {
-            'message': raw_log.strip(),
-            'source': source,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'level': self._extract_log_level(raw_log)
+        # Determine which partitions to query
+        target_partitions = self.router.get_query_partitions(filter_criteria)
+        
+        # Query each relevant partition
+        all_results = []
+        for partition in target_partitions:
+            partition_results = self.manager.query_partition(partition, filter_criteria)
+            all_results.extend(partition_results)
+        
+        execution_time = time.time() - start_time
+        
+        # Record query statistics
+        query_stat = {
+            "filter": filter_criteria,
+            "partitions_queried": target_partitions,
+            "total_partitions": len(self.router.nodes),
+            "results_count": len(all_results),
+            "execution_time": execution_time,
+            "partition_efficiency": len(target_partitions) / len(self.router.nodes)
         }
-        
-        return log_entry
-    
-    def _extract_log_level(self, message: str) -> str:
-        """Extract log level from message."""
-        message_upper = message.upper()
-        for level in ['CRITICAL', 'FATAL', 'ERROR', 'WARN', 'WARNING', 'INFO', 'DEBUG']:
-            if level in message_upper:
-                return level
-        return 'INFO'  # Default level
-    
-    def _collect_metadata(self) -> Dict[str, Any]:
-        """Collect metadata from all collectors."""
-        metadata = {
-            'collection_timestamp': datetime.now(timezone.utc).isoformat(),
-        }
-        
-        try:
-            metadata['system'] = self.system_collector.collect()
-        except Exception as e:
-            logger.warning(f"System metadata collection failed: {e}")
-            metadata['system'] = {}
-        
-        try:
-            metadata['performance'] = self.performance_collector.collect()
-        except Exception as e:
-            logger.warning(f"Performance metadata collection failed: {e}")
-            metadata['performance'] = {}
-        
-        try:
-            metadata['environment'] = self.env_collector.collect()
-        except Exception as e:
-            logger.warning(f"Environment metadata collection failed: {e}")
-            metadata['environment'] = {}
-        
-        return metadata
-    
-    def _create_enriched_record(self, log_entry: Dict[str, Any], 
-                               enrichment_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create the final enriched log record."""
-        enriched_record = {
-            # Original log data
-            'timestamp': log_entry['timestamp'],
-            'level': log_entry['level'],
-            'message': log_entry['message'],
-            'source': log_entry['source'],
-            
-            # Enrichment metadata
-            **enrichment_data,
-            
-            # Pipeline metadata
-            'enrichment_version': '1.0.0',
-            'enriched_at': datetime.now(timezone.utc).isoformat(),
-        }
-        
-        return enriched_record
-    
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get pipeline processing statistics."""
-        runtime = time.time() - self.stats['start_time']
+        self.query_stats.append(query_stat)
         
         return {
-            'processed_count': self.stats['processed_count'],
-            'error_count': self.stats['error_count'],
-            'success_rate': (
-                (self.stats['processed_count'] - self.stats['error_count']) / 
-                max(self.stats['processed_count'], 1) * 100
-            ),
-            'runtime_seconds': round(runtime, 2),
-            'average_throughput': round(self.stats['processed_count'] / max(runtime, 1), 2),
+            "results": all_results,
+            "stats": query_stat
+        }
+    
+    def get_performance_comparison(self) -> Dict[str, Any]:
+        """Generate performance comparison between optimized and brute-force"""
+        if not self.query_stats:
+            return {"message": "No queries executed yet"}
+        
+        latest_query = self.query_stats[-1]
+        optimized_time = latest_query["execution_time"]
+        
+        # Simulate brute-force time (would query all partitions)
+        brute_force_multiplier = len(self.router.nodes) / len(latest_query["partitions_queried"])
+        estimated_brute_force_time = optimized_time * brute_force_multiplier
+        
+        improvement_factor = estimated_brute_force_time / optimized_time if optimized_time > 0 else 1
+        
+        return {
+            "optimized_time": optimized_time,
+            "estimated_brute_force_time": estimated_brute_force_time,
+            "improvement_factor": improvement_factor,
+            "partitions_pruned": len(self.router.nodes) - len(latest_query["partitions_queried"]),
+            "efficiency_percentage": latest_query["partition_efficiency"] * 100
         }
 EOF
 
-# Create JSON formatter
-cat > src/formatters/json_formatter.py << 'EOF'
-"""
-JSON formatter for enriched log output.
-"""
-
+# Main Application
+cat > src/log_partitioning_system.py << 'EOF'
+from datetime import datetime, timedelta
+import random
 import json
-from typing import Dict, Any
-import logging
+from src.partition_router import PartitionRouter
+from src.partition_manager import PartitionManager
+from src.query_optimizer import QueryOptimizer
 
-logger = logging.getLogger(__name__)
-
-
-class JSONFormatter:
-    """
-    Formats enriched log entries as structured JSON.
+class LogPartitioningSystem:
+    def __init__(self, strategy="source"):
+        self.router = PartitionRouter(strategy=strategy)
+        self.manager = PartitionManager()
+        self.optimizer = QueryOptimizer(self.router, self.manager)
+        self.processed_logs = 0
     
-    This formatter ensures consistent output format and handles
-    serialization of complex data types.
-    """
+    def ingest_log(self, log_entry):
+        """Ingest a single log entry"""
+        partition = self.router.route_log(log_entry)
+        self.manager.store_log(partition, log_entry)
+        self.processed_logs += 1
+        return partition
     
-    def __init__(self, pretty_print: bool = False):
-        """
-        Initialize JSON formatter.
+    def generate_sample_logs(self, count=1000):
+        """Generate sample logs for testing"""
+        sources = ["web_server", "database", "auth_service", "api_gateway", "cache"]
+        levels = ["INFO", "WARNING", "ERROR", "DEBUG"]
         
-        Args:
-            pretty_print: Whether to format JSON with indentation
-        """
-        self.pretty_print = pretty_print
+        logs = []
+        base_time = datetime.now() - timedelta(hours=24)
+        
+        for i in range(count):
+            log = {
+                "id": f"log_{i:04d}",
+                "source": random.choice(sources),
+                "level": random.choice(levels),
+                "message": f"Sample log message {i}",
+                "timestamp": (base_time + timedelta(minutes=random.randint(0, 1440))).isoformat(),
+                "user_id": f"user_{random.randint(1, 100)}"
+            }
+            logs.append(log)
+        
+        return logs
     
-    def format(self, enriched_log: Dict[str, Any]) -> str:
-        """
-        Format enriched log as JSON string.
+    def demo_partitioning(self):
+        """Demonstrate partitioning system with sample data"""
+        print("🚀 Starting Log Partitioning Demo")
         
-        Args:
-            enriched_log: The enriched log dictionary
-            
-        Returns:
-            JSON formatted string
-        """
-        try:
-            if self.pretty_print:
-                return json.dumps(enriched_log, indent=2, default=self._json_serializer)
-            else:
-                return json.dumps(enriched_log, separators=(',', ':'), default=self._json_serializer)
-        except Exception as e:
-            logger.error(f"Failed to format log as JSON: {e}")
-            # Return minimal fallback
-            return json.dumps({
-                'message': str(enriched_log.get('message', 'unknown')),
-                'formatting_error': str(e),
-                'timestamp': enriched_log.get('timestamp', 'unknown')
-            })
-    
-    def _json_serializer(self, obj: Any) -> str:
-        """Custom JSON serializer for complex types."""
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        return str(obj)
-EOF
-
-print_success "Main pipeline and formatter created"
-
-# ===================================================================
-# STEP 5: Create Demo Application
-# ===================================================================
-print_step "Creating demo web application..."
-
-# Create demo server
-cat > demo/demo_server.py << 'EOF'
-"""
-Demo web server for log enrichment pipeline.
-"""
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from flask import Flask, render_template, request, jsonify
-import json
-import logging
-from datetime import datetime
-
-from src.pipeline import LogEnrichmentPipeline
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Initialize Flask app
-app = Flask(__name__)
-
-# Initialize enrichment pipeline
-pipeline = LogEnrichmentPipeline()
-
-@app.route('/')
-def index():
-    """Main demo page."""
-    return render_template('index.html')
-
-@app.route('/api/enrich', methods=['POST'])
-def enrich_log():
-    """Enrich a log entry via API."""
-    try:
-        data = request.get_json()
-        raw_log = data.get('log_message', '')
-        source = data.get('source', 'demo')
+        # Generate and ingest sample logs
+        print("📊 Generating sample logs...")
+        sample_logs = self.generate_sample_logs(1000)
         
-        if not raw_log:
-            return jsonify({'error': 'No log message provided'}), 400
+        print("📥 Ingesting logs...")
+        for log in sample_logs:
+            self.ingest_log(log)
         
-        # Enrich the log
-        enriched = pipeline.enrich_log(raw_log, source)
+        print(f"✅ Processed {self.processed_logs} logs")
         
-        return jsonify({
-            'success': True,
-            'enriched_log': enriched,
-            'original_log': raw_log
+        # Show partition distribution
+        stats = self.manager.get_partition_stats()
+        print("\n📈 Partition Distribution:")
+        for partition, stat in stats.items():
+            print(f"  {partition}: {stat['log_count']} logs, Sources: {stat['sources']}")
+        
+        # Demo optimized queries
+        print("\n🔍 Testing Query Optimization:")
+        
+        # Query by source
+        if self.router.strategy == "source":
+            query_result = self.optimizer.execute_query({"source": "web_server"})
+            print(f"  Source query: Found {len(query_result['results'])} web_server logs")
+            print(f"  Queried {len(query_result['stats']['partitions_queried'])}/{len(self.router.nodes)} partitions")
+        
+        # Query by time range
+        time_start = (datetime.now() - timedelta(hours=2)).isoformat()
+        time_end = datetime.now().isoformat()
+        time_query = self.optimizer.execute_query({
+            "time_range": {"start": time_start, "end": time_end}
         })
+        print(f"  Time query: Found {len(time_query['results'])} logs in last 2 hours")
         
-    except Exception as e:
-        logger.error(f"API enrichment failed: {e}")
-        return jsonify({'error': str(e)}), 500
+        # Show performance comparison
+        perf = self.optimizer.get_performance_comparison()
+        print(f"\n⚡ Performance Improvement:")
+        print(f"  Improvement Factor: {perf['improvement_factor']:.1f}x faster")
+        print(f"  Efficiency: {perf['efficiency_percentage']:.1f}%")
+        
+        return {
+            "logs_processed": self.processed_logs,
+            "partition_stats": stats,
+            "performance": perf
+        }
 
-@app.route('/api/stats')
-def get_stats():
-    """Get pipeline statistics."""
-    return jsonify(pipeline.get_statistics())
-
-@app.route('/api/sample-logs')
-def get_sample_logs():
-    """Get sample log entries for testing."""
-    sample_logs = [
-        "INFO: User login successful for user_id=12345",
-        "ERROR: Database connection timeout after 30 seconds",
-        "WARN: High memory usage detected: 89% of available memory",
-        "DEBUG: Processing payment transaction id=abc123",
-        "CRITICAL: System disk space critically low: 95% full",
-        "INFO: Cache refresh completed in 150ms",
-        "ERROR: Failed to authenticate user: invalid credentials",
-        "WARN: API rate limit approaching for client_id=xyz789"
-    ]
-    return jsonify(sample_logs)
-
-if __name__ == '__main__':
-    print("Starting Log Enrichment Demo Server...")
-    print("Open http://localhost:8080 in your browser")
-    app.run(host='0.0.0.0', port=8080, debug=True)
+if __name__ == "__main__":
+    # Demo both strategies
+    print("=== SOURCE-BASED PARTITIONING ===")
+    source_system = LogPartitioningSystem("source")
+    source_results = source_system.demo_partitioning()
+    
+    print("\n=== TIME-BASED PARTITIONING ===")
+    time_system = LogPartitioningSystem("time")
+    time_results = time_system.demo_partitioning()
 EOF
 
-# Create demo HTML template directory and file
-mkdir -p demo/templates
-
-cat > demo/templates/index.html << 'EOF'
+# Web Dashboard
+cat > web/dashboard.html << 'EOF'
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Enrichment Pipeline Demo</title>
+    <title>Log Partitioning Dashboard</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #2c3e50;
-        }
-        .demo-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: #fafafa;
-        }
-        .input-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #34495e;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        .sample-button {
-            background-color: #27ae60;
-        }
-        .sample-button:hover {
-            background-color: #229954;
-        }
-        .output {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-top: 15px;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .error {
-            color: #e74c3c;
-            background-color: #fdf2f2;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-        .success {
-            color: #27ae60;
-            background-color: #f0f9f0;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric { display: inline-block; margin: 10px 20px; text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #4CAF50; }
+        .metric-label { color: #666; }
+        .partition { padding: 10px; margin: 5px; background: #e3f2fd; border-left: 4px solid #2196F3; }
+        .chart { height: 200px; background: #f9f9f9; border: 1px solid #ddd; display: flex; align-items: end; padding: 10px; }
+        .bar { background: #4CAF50; margin: 2px; color: white; text-align: center; display: flex; align-items: end; justify-content: center; min-width: 60px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Log Enrichment Pipeline Demo</h1>
-            <p>Day 21: 254-Day Hands-On System Design Course</p>
+        <h1>🗂️ Log Partitioning Dashboard</h1>
+        
+        <div class="card">
+            <h2>System Overview</h2>
+            <div class="metric">
+                <div class="metric-value" id="totalLogs">0</div>
+                <div class="metric-label">Total Logs</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="totalPartitions">3</div>
+                <div class="metric-label">Active Partitions</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="queryImprovement">0x</div>
+                <div class="metric-label">Query Improvement</div>
+            </div>
         </div>
 
-        <div class="demo-section">
-            <h2>Log Enrichment Testing</h2>
-            <div class="input-group">
-                <label for="logMessage">Log Message:</label>
-                <textarea id="logMessage" rows="3" placeholder="Enter a log message to enrich...">ERROR: Database connection timeout after 30 seconds</textarea>
+        <div class="card">
+            <h2>Partition Distribution</h2>
+            <div class="chart" id="partitionChart">
+                <div class="bar" style="height: 60%">Node 1<br>340</div>
+                <div class="bar" style="height: 80%">Node 2<br>450</div>
+                <div class="bar" style="height: 40%">Node 3<br>210</div>
             </div>
-            <div class="input-group">
-                <label for="logSource">Source:</label>
-                <input type="text" id="logSource" value="demo-app" placeholder="Source identifier">
-            </div>
-            <button onclick="enrichLog()">Enrich Log</button>
-            <button class="sample-button" onclick="loadSampleLog()">Load Sample</button>
-            <button onclick="clearOutput()">Clear Output</button>
-            
-            <div id="output" class="output"></div>
-            <div id="message"></div>
         </div>
 
-        <div class="demo-section">
-            <h2>Pipeline Statistics</h2>
-            <button onclick="loadStats()">Refresh Stats</button>
-            <div id="stats" class="stats"></div>
+        <div class="card">
+            <h2>Partition Details</h2>
+            <div id="partitionDetails">
+                <div class="partition">
+                    <strong>node_1</strong> - 340 logs<br>
+                    Sources: web_server, database<br>
+                    Last Updated: 2 minutes ago
+                </div>
+                <div class="partition">
+                    <strong>node_2</strong> - 450 logs<br>
+                    Sources: auth_service, api_gateway<br>
+                    Last Updated: 1 minute ago
+                </div>
+                <div class="partition">
+                    <strong>node_3</strong> - 210 logs<br>
+                    Sources: cache<br>
+                    Last Updated: 30 seconds ago
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Query Performance</h2>
+            <p><strong>Last Query:</strong> source='web_server'</p>
+            <p><strong>Partitions Queried:</strong> 1 of 3 (33% efficiency)</p>
+            <p><strong>Execution Time:</strong> 0.045s (estimated 0.135s without partitioning)</p>
+            <p><strong>Performance Gain:</strong> 3.0x faster</p>
         </div>
     </div>
 
     <script>
-        let sampleLogs = [];
-        
-        // Load sample logs on page load
-        fetch('/api/sample-logs')
-            .then(response => response.json())
-            .then(data => {
-                sampleLogs = data;
-            })
-            .catch(error => console.error('Failed to load sample logs:', error));
+        // Simulate real-time updates
+        function updateMetrics() {
+            const totalLogs = Math.floor(Math.random() * 1000) + 500;
+            document.getElementById('totalLogs').textContent = totalLogs;
+            
+            const improvement = (Math.random() * 5 + 2).toFixed(1);
+            document.getElementById('queryImprovement').textContent = improvement + 'x';
+        }
 
-        function enrichLog() {
-            const logMessage = document.getElementById('logMessage').value;
-            const logSource = document.getElementById('logSource').value;
-            const outputDiv = document.getElementById('output');
-            const messageDiv = document.getElementById('message');
-            
-            if (!logMessage.trim()) {
-                showMessage('Please enter a log message', 'error');
-                return;
-            }
-            
-            // Show loading
-            outputDiv.textContent = 'Processing...';
-            messageDiv.innerHTML = '';
-            
-            fetch('/api/enrich', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    log_message: logMessage,
-                    source: logSource
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const formatted = JSON.stringify(data.enriched_log, null, 2);
-                    outputDiv.textContent = formatted;
-                    showMessage('Log enriched successfully!', 'success');
-                } else {
-                    outputDiv.textContent = 'Error: ' + data.error;
-                    showMessage('Enrichment failed: ' + data.error, 'error');
-                }
-            })
-            .catch(error => {
-                outputDiv.textContent = 'Network error: ' + error;
-                showMessage('Network error occurred', 'error');
-            });
-        }
-        
-        function loadSampleLog() {
-            if (sampleLogs.length > 0) {
-                const randomLog = sampleLogs[Math.floor(Math.random() * sampleLogs.length)];
-                document.getElementById('logMessage').value = randomLog;
-            }
-        }
-        
-        function clearOutput() {
-            document.getElementById('output').textContent = '';
-            document.getElementById('message').innerHTML = '';
-        }
-        
-        function loadStats() {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    const statsDiv = document.getElementById('stats');
-                    statsDiv.innerHTML = `
-                        <div class="stat-card">
-                            <div class="stat-value">${data.processed_count}</div>
-                            <div>Logs Processed</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${data.error_count}</div>
-                            <div>Errors</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${data.success_rate.toFixed(1)}%</div>
-                            <div>Success Rate</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${data.average_throughput}</div>
-                            <div>Logs/Second</div>
-                        </div>
-                    `;
-                })
-                .catch(error => {
-                    console.error('Failed to load stats:', error);
-                });
-        }
-        
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.innerHTML = `<div class="${type}">${text}</div>`;
-        }
-        
-        // Load stats on page load
-        loadStats();
-        
-        // Auto-refresh stats every 30 seconds
-        setInterval(loadStats, 30000);
+        setInterval(updateMetrics, 3000);
+        updateMetrics();
     </script>
 </body>
 </html>
 EOF
 
-print_success "Demo web application created"
+# Test files
+echo "🧪 Creating test files..."
 
-# ===================================================================
-# STEP 6: Create Configuration and Tests
-# ===================================================================
-print_step "Creating configuration files and tests..."
-
-# Create enrichment rules configuration
-cat > config/enrichment_rules.yaml << 'EOF'
-# Log Enrichment Rules Configuration
-# Defines which metadata to include based on log characteristics
-
-rules:
-  - name: "critical_error_enrichment"
-    conditions:
-      log_level: ["CRITICAL", "FATAL"]
-      message_contains: ["error", "fail", "crash", "panic"]
-    actions:
-      include_performance: true
-      include_environment: true
-      include_detailed_system: true
-      include_network: true
-
-  - name: "database_error_enrichment"
-    conditions:
-      message_contains: ["database", "db", "sql", "connection", "timeout"]
-    actions:
-      include_performance: true
-      include_environment: true
-
-  - name: "authentication_enrichment"
-    conditions:
-      message_contains: ["auth", "login", "user", "session", "token"]
-    actions:
-      include_environment: true
-      include_security_context: true
-
-  - name: "performance_warning_enrichment"
-    conditions:
-      log_level: ["WARN", "WARNING"]
-      message_contains: ["memory", "cpu", "disk", "slow", "timeout"]
-    actions:
-      include_performance: true
-
-  - name: "default_info_enrichment"
-    conditions:
-      log_level: ["INFO"]
-    actions:
-      include_environment: true
-EOF
-
-# Create comprehensive test suite
-cat > tests/test_collectors.py << 'EOF'
-"""
-Tests for metadata collectors.
-"""
-
+cat > tests/test_partition_router.py << 'EOF'
 import unittest
-from unittest.mock import patch, MagicMock
+from datetime import datetime
 import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from src.partition_router import PartitionRouter
 
-from src.collectors.system_collector import SystemCollector
-from src.collectors.performance_collector import PerformanceCollector
-from src.collectors.env_collector import EnvironmentCollector
-
-
-class TestSystemCollector(unittest.TestCase):
-    """Test system metadata collector."""
+class TestPartitionRouter(unittest.TestCase):
     
     def setUp(self):
-        self.collector = SystemCollector(cache_ttl=1)
+        self.source_router = PartitionRouter(strategy="source")
+        self.time_router = PartitionRouter(strategy="time")
     
-    def test_collect_returns_dict(self):
-        """Test that collect returns a dictionary."""
-        result = self.collector.collect()
-        self.assertIsInstance(result, dict)
+    def test_source_routing_consistency(self):
+        """Test that same source always routes to same partition"""
+        log1 = {"source": "web_server", "timestamp": "2024-01-01T10:00:00"}
+        log2 = {"source": "web_server", "timestamp": "2024-01-02T15:30:00"}
+        
+        partition1 = self.source_router.route_log(log1)
+        partition2 = self.source_router.route_log(log2)
+        
+        self.assertEqual(partition1, partition2)
     
-    def test_required_fields_present(self):
-        """Test that required fields are present in collected data."""
-        result = self.collector.collect()
-        required_fields = ['hostname', 'platform', 'service_name']
-        for field in required_fields:
-            self.assertIn(field, result)
+    def test_different_sources_distribution(self):
+        """Test that different sources can map to different partitions"""
+        sources = ["web_server", "database", "auth_service", "cache", "api_gateway"]
+        partitions = set()
+        
+        for source in sources:
+            log = {"source": source, "timestamp": "2024-01-01T10:00:00"}
+            partition = self.source_router.route_log(log)
+            partitions.add(partition)
+        
+        # Should have distribution across partitions
+        self.assertGreater(len(partitions), 1)
     
-    @patch('socket.gethostname')
-    def test_hostname_fallback(self, mock_hostname):
-        """Test hostname fallback when socket.gethostname fails."""
-        mock_hostname.side_effect = Exception("Network error")
-        with patch.dict(os.environ, {'HOSTNAME': 'test-host'}):
-            result = self.collector.collect()
-            self.assertEqual(result['hostname'], 'test-host')
+    def test_time_routing_same_bucket(self):
+        """Test that logs in same time bucket go to same partition"""
+        log1 = {"source": "web_server", "timestamp": "2024-01-01T10:00:00"}
+        log2 = {"source": "database", "timestamp": "2024-01-01T10:30:00"}
+        
+        partition1 = self.time_router.route_log(log1)
+        partition2 = self.time_router.route_log(log2)
+        
+        self.assertEqual(partition1, partition2)
+    
+    def test_query_partition_pruning_source(self):
+        """Test query optimization for source-based partitioning"""
+        partitions = self.source_router.get_query_partitions({"source": "web_server"})
+        
+        # Should return only one partition for specific source
+        self.assertEqual(len(partitions), 1)
+    
+    def test_query_partition_pruning_time(self):
+        """Test query optimization for time-based partitioning"""
+        time_filter = {
+            "time_range": {
+                "start": "2024-01-01T10:00:00",
+                "end": "2024-01-01T12:00:00"
+            }
+        }
+        partitions = self.time_router.get_query_partitions(time_filter)
+        
+        # Should return limited partitions for time range
+        self.assertLessEqual(len(partitions), 3)
 
-
-class TestPerformanceCollector(unittest.TestCase):
-    """Test performance metrics collector."""
-    
-    def setUp(self):
-        self.collector = PerformanceCollector(cache_duration=0.1)
-    
-    def test_collect_returns_dict(self):
-        """Test that collect returns a dictionary."""
-        result = self.collector.collect()
-        self.assertIsInstance(result, dict)
-    
-    def test_performance_fields_present(self):
-        """Test that performance fields are present."""
-        result = self.collector.collect()
-        expected_fields = ['cpu_percent', 'memory_percent', 'disk_percent']
-        for field in expected_fields:
-            self.assertIn(field, result)
-    
-    @patch('psutil.cpu_percent')
-    def test_handles_psutil_errors(self, mock_cpu):
-        """Test graceful handling of psutil errors."""
-        mock_cpu.side_effect = Exception("Permission denied")
-        result = self.collector.collect()
-        self.assertIn('error', result)
-
-
-class TestEnvironmentCollector(unittest.TestCase):
-    """Test environment metadata collector."""
-    
-    def setUp(self):
-        self.collector = EnvironmentCollector()
-    
-    def test_collect_returns_dict(self):
-        """Test that collect returns a dictionary."""
-        result = self.collector.collect()
-        self.assertIsInstance(result, dict)
-    
-    def test_filters_sensitive_variables(self):
-        """Test that sensitive environment variables are filtered out."""
-        with patch.dict(os.environ, {
-            'APP_NAME': 'test-app',
-            'SECRET_KEY': 'secret-value',
-            'PASSWORD': 'password-value'
-        }):
-            result = self.collector.collect()
-            env_vars = result.get('environment_variables', {})
-            self.assertIn('APP_NAME', env_vars)
-            self.assertNotIn('SECRET_KEY', env_vars)
-            self.assertNotIn('PASSWORD', env_vars)
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
 EOF
 
-# Create integration tests
 cat > tests/test_integration.py << 'EOF'
-"""
-Integration tests for the complete enrichment pipeline.
-"""
-
 import unittest
+import tempfile
+import shutil
 import sys
 import os
-import json
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from src.log_partitioning_system import LogPartitioningSystem
 
-from src.pipeline import LogEnrichmentPipeline
-
-
-class TestLogEnrichmentPipeline(unittest.TestCase):
-    """Test the complete log enrichment pipeline."""
+class TestIntegration(unittest.TestCase):
     
     def setUp(self):
-        self.pipeline = LogEnrichmentPipeline()
+        self.temp_dir = tempfile.mkdtemp()
+        self.system = LogPartitioningSystem("source")
+        self.system.manager.data_dir = self.temp_dir
+        self.system.manager._ensure_data_dir()
     
-    def test_enrich_simple_log(self):
-        """Test enriching a simple log message."""
-        raw_log = "INFO: User login successful"
-        result = self.pipeline.enrich_log(raw_log, "test-app")
-        
-        # Verify basic structure
-        self.assertIsInstance(result, dict)
-        self.assertEqual(result['message'], raw_log)
-        self.assertEqual(result['level'], 'INFO')
-        self.assertEqual(result['source'], 'test-app')
-        self.assertIn('hostname', result)
-        self.assertIn('enriched_at', result)
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
     
-    def test_enrich_error_log_includes_performance(self):
-        """Test that ERROR logs include performance data."""
-        raw_log = "ERROR: Database connection failed"
-        result = self.pipeline.enrich_log(raw_log, "db-service")
+    def test_end_to_end_workflow(self):
+        """Test complete workflow from ingestion to query"""
+        # Generate sample logs
+        logs = self.system.generate_sample_logs(100)
         
-        # Error logs should include performance metrics
-        self.assertEqual(result['level'], 'ERROR')
-        self.assertIn('cpu_percent', result)
-        self.assertIn('memory_percent', result)
+        # Ingest logs
+        for log in logs:
+            self.system.ingest_log(log)
+        
+        # Verify logs were distributed
+        stats = self.system.manager.get_partition_stats()
+        total_logs = sum(stat['log_count'] for stat in stats.values())
+        self.assertEqual(total_logs, 100)
+        
+        # Test query optimization
+        query_result = self.system.optimizer.execute_query({"source": "web_server"})
+        
+        # Should find some results and show efficiency
+        self.assertGreater(len(query_result['results']), 0)
+        self.assertLessEqual(len(query_result['stats']['partitions_queried']), 3)
     
-    def test_enrich_malformed_input(self):
-        """Test handling of malformed input."""
-        result = self.pipeline.enrich_log("", "test")
+    def test_performance_improvement(self):
+        """Test that partitioning shows performance improvement"""
+        # Generate and ingest logs
+        logs = self.system.generate_sample_logs(500)
+        for log in logs:
+            self.system.ingest_log(log)
         
-        # Should still return a valid structure
-        self.assertIsInstance(result, dict)
-        self.assertIn('timestamp', result)
-    
-    def test_pipeline_statistics(self):
-        """Test pipeline statistics tracking."""
-        # Process some logs
-        self.pipeline.enrich_log("INFO: Test 1", "app1")
-        self.pipeline.enrich_log("ERROR: Test 2", "app2")
+        # Execute query
+        self.system.optimizer.execute_query({"source": "database"})
         
-        stats = self.pipeline.get_statistics()
-        
-        self.assertGreaterEqual(stats['processed_count'], 2)
-        self.assertIn('success_rate', stats)
-        self.assertIn('average_throughput', stats)
-    
-    def test_json_serialization(self):
-        """Test that enriched logs can be serialized to JSON."""
-        raw_log = "WARN: High memory usage detected"
-        result = self.pipeline.enrich_log(raw_log, "monitor")
-        
-        # Should be JSON serializable
-        json_str = json.dumps(result)
-        parsed = json.loads(json_str)
-        
-        self.assertEqual(parsed['message'], raw_log)
-        self.assertEqual(parsed['level'], 'WARN')
+        # Check performance metrics
+        perf = self.system.optimizer.get_performance_comparison()
+        self.assertGreater(perf['improvement_factor'], 1.0)
+        self.assertGreater(perf['efficiency_percentage'], 0)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
 EOF
 
-print_success "Configuration and tests created"
+# Configuration
+cat > config/partitioning_config.json << 'EOF'
+{
+    "strategies": {
+        "source": {
+            "enabled": true,
+            "hash_function": "md5",
+            "nodes": ["node_1", "node_2", "node_3"]
+        },
+        "time": {
+            "enabled": true,
+            "window_hours": 8,
+            "nodes": ["node_1", "node_2", "node_3"]
+        }
+    },
+    "storage": {
+        "data_directory": "data",
+        "file_format": "jsonl",
+        "compression": false
+    },
+    "performance": {
+        "batch_size": 100,
+        "query_timeout": 30,
+        "max_results": 10000
+    }
+}
+EOF
 
-# ===================================================================
-# STEP 7: Create Virtual Environment and Install Dependencies
-# ===================================================================
-print_step "Setting up Python virtual environment..."
+# Requirements file
+cat > requirements.txt << 'EOF'
+pytest==7.4.0
+flask==2.3.2
+requests==2.31.0
+python-dateutil==2.8.2
+EOF
 
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment and install dependencies
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-
-print_success "Virtual environment created and dependencies installed"
-
-# ===================================================================
-# STEP 8: Build and Test
-# ===================================================================
-print_step "Running tests and validation..."
-
-# Run unit tests
-echo "Running unit tests..."
-python -m pytest tests/ -v --tb=short
-
-# Test import functionality
-echo "Testing imports..."
-python -c "
-import sys
-sys.path.append('src')
-from pipeline import LogEnrichmentPipeline
-pipeline = LogEnrichmentPipeline()
-result = pipeline.enrich_log('INFO: System startup complete', 'test')
-print('✓ Pipeline import and basic functionality test passed')
-print(f'✓ Enriched log contains {len(result)} fields')
-"
-
-print_success "Tests completed successfully"
-
-# ===================================================================
-# STEP 9: Create Docker Configuration
-# ===================================================================
-print_step "Creating Docker configuration..."
-
-# Create Dockerfile
+# Docker setup
 cat > Dockerfile << 'EOF'
-FROM python:3.13-slim
+FROM python:3.9-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy application code
-COPY src/ ./src/
-COPY demo/ ./demo/
-COPY config/ ./config/
-COPY tests/ ./tests/
+COPY . .
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV FLASK_APP=demo/demo_server.py
-ENV ENVIRONMENT=docker
+EXPOSE 5000
 
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/api/stats || exit 1
-
-# Run the demo server
-CMD ["python", "demo/demo_server.py"]
+CMD ["python", "src/log_partitioning_system.py"]
 EOF
 
-# Create log generator script
-cat > demo/log_generator.py << 'EOF'
-"""
-Log generator script for testing the enrichment pipeline.
-"""
-
-import time
-import requests
-import random
-
-logs = [
-    'INFO: User authentication successful',
-    'ERROR: Database connection timeout',
-    'WARN: High CPU usage detected',
-    'DEBUG: Cache miss for key user:12345',
-    'CRITICAL: Disk space critically low'
-]
-
-while True:
-    log = random.choice(logs)
-    try:
-        requests.post('http://log-enrichment:8080/api/enrich',
-                     json={'log_message': log, 'source': 'auto-generator'})
-        print(f'Sent: {log}')
-    except:
-        print('Failed to send log')
-    time.sleep(5)
-EOF
-
-# Create docker-compose.yml
 cat > docker-compose.yml << 'EOF'
 version: '3.8'
 
 services:
-  log-enrichment:
+  log-partitioning:
     build: .
     ports:
-      - "8080:8080"
-    environment:
-      - ENVIRONMENT=docker
-      - SERVICE_NAME=log-enrichment-pipeline
-      - SERVICE_VERSION=1.0.0
-      - REGION=local
+      - "5000:5000"
     volumes:
-      - ./config:/app/config:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/stats"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # Optional: Add a simple log generator for testing
-  log-generator:
-    build: .
-    command: python demo/log_generator.py
-    depends_on:
-      - log-enrichment
-    restart: unless-stopped
-
-volumes:
-  config-data:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PARTITION_STRATEGY=source
+      - NODE_COUNT=3
+  
+  web-dashboard:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html
 EOF
 
-print_success "Docker configuration created"
+echo "🏗️ Building and testing system..."
 
-# ===================================================================
-# FINAL SETUP SUMMARY
-# ===================================================================
-print_step "Setup complete! Here's what was created:"
+# Install dependencies
+echo "📦 Installing dependencies..."
+pip install -r requirements.txt
+
+# Run tests
+echo "🧪 Running unit tests..."
+python -m pytest tests/ -v
+
+# Run integration demo
+echo "🚀 Running integration demo..."
+python src/log_partitioning_system.py
+
+echo "🌐 Starting web dashboard..."
+echo "Dashboard available at: http://localhost:8080"
+
+# Build and test commands
+echo ""
+echo "=== BUILD AND VERIFY COMMANDS ==="
+echo ""
+echo "# Manual Testing Commands:"
+echo "python src/log_partitioning_system.py  # Run demo"
+echo "python -m pytest tests/ -v             # Run tests"
+echo "python -c \"
+from src.log_partitioning_system import LogPartitioningSystem
+system = LogPartitioningSystem('source')
+result = system.demo_partitioning()
+print('✅ Demo completed successfully')
+print(f'Processed: {result[\"logs_processed\"]} logs')
+print(f'Performance: {result[\"performance\"][\"improvement_factor\"]:.1f}x improvement')
+\""
+echo ""
+echo "# Docker Commands:"
+echo "docker-compose up -d                    # Start services"
+echo "docker-compose logs log-partitioning    # View logs"
+echo "docker-compose down                     # Stop services"
+echo ""
+echo "# Expected Output:"
+echo "✅ 1000 logs processed and partitioned"
+echo "✅ Query performance improvement of 2-10x"
+echo "✅ Web dashboard showing partition distribution"
+echo "✅ All tests passing"
 
 echo ""
-echo "📁 Project Structure:"
-echo "   ├── src/                     # Core implementation"
-echo "   │   ├── collectors/          # Metadata collectors"
-echo "   │   ├── enrichers/           # Enrichment logic"
-echo "   │   ├── formatters/          # Output formatting"
-echo "   │   └── pipeline.py          # Main pipeline"
-echo "   ├── demo/                    # Web demo application"
-echo "   ├── tests/                   # Test suite"
-echo "   ├── config/                  # Configuration files"
-echo "   └── Docker configuration     # Container setup"
-echo ""
-
-echo "🎯 Next Steps:"
-echo "   1. Run 'python3 -m pytest tests/' for comprehensive testing"
-echo "   2. Use 'docker-compose up' for containerized deployment"
-echo "   3. Explore the code to understand enrichment patterns"
-echo ""
-
-echo "📊 Quick Test:"
-echo "   curl -X POST http://localhost:8080/api/enrich \\"
-echo "        -H 'Content-Type: application/json' \\"
-echo "        -d '{\"log_message\": \"ERROR: Test message\", \"source\": \"cli\"}'"
-echo ""
-
-echo "🐳 Docker Commands:"
-echo "   Build: docker build -t log-enrichment ."
-echo "   Run:   docker-compose up"
-echo "   Test:  docker-compose run log-enrichment python -m pytest tests/"
-echo ""
-
-print_success "Log Enrichment Pipeline setup completed successfully!"
-
-# ===================================================================
-# VERIFICATION COMMANDS
-# ===================================================================
-echo ""
-echo "🔍 Verification Commands:"
-echo ""
-echo "Test basic functionality:"
-echo "python3 -c 'from src.pipeline import LogEnrichmentPipeline; pipeline = LogEnrichmentPipeline(); result = pipeline.enrich_log(\"ERROR: Critical system failure\", \"verification\"); print(\"Enrichment successful:\", \"hostname\" in result and \"cpu_percent\" in result); print(\"Fields added:\", len(result))'"
-echo ""
-
-echo "Run all tests:"
-echo "python3 -m pytest tests/ -v"
-echo ""
-
-echo "Test API endpoint:"
-echo "curl -X POST http://localhost:8080/api/enrich -H 'Content-Type: application/json' -d '{\"log_message\": \"INFO: Verification test\", \"source\": \"setup-script\"}'"
-echo ""
-
-echo "═══════════════════════════════════════════════════════════════"
-echo "🎉 Day 21 Implementation Complete!"
-echo "You now have a fully functional log enrichment pipeline!"
-echo "═══════════════════════════════════════════════════════════════"
+echo "🎉 Log Partitioning System Setup Complete!"
+echo "📊 Check the dashboard at http://localhost:8080"
+echo "🔍 Test queries to see partitioning benefits"

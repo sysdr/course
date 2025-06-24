@@ -1,0 +1,11 @@
+# week2/day11/Dockerfile.client
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY week2/day11/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY week2/day11/log_shipper/ ./log_shipper/
+
+CMD ["python", "-m", "log_shipper.batch_log_client"]

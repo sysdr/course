@@ -1,0 +1,26 @@
+# integration/config.yml
+# Log Processing Pipeline Configuration
+
+# Required directories
+directories:
+  - ./logs
+  - ./data/collected
+  - ./data/parsed
+  - ./data/storage
+  - ./data/storage/index
+  - ./data/storage/active
+  - ./data/storage/archive
+
+# Component configuration
+components:
+  - name: generator
+    command: python /app/generator/generator.py --format apache --rate 5 --output /logs/app.log
+  
+  - name: collector
+    command: python /app/collector/collector.py --source /logs/app.log --output-dir /data/collected --interval 2
+  
+  - name: parser
+    command: python /app/parser/parser.py --input-dir /data/collected --output-dir /data/parsed --format apache --interval 3
+  
+  - name: storage
+    command: python /app/storage/storage.py --input-dir /data/parsed --storage-dir /data/storage --rotation-size 1 --rotation-hours 1 --interval 5

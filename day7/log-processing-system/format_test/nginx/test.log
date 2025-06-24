@@ -1,0 +1,5 @@
+18/May/2025:15:29:08 +0000 [CRITICAL] worker2: Failed to connect to database
+18/May/2025:15:29:09 +0000 [INFO] worker1: Connection timeout
+18/May/2025:15:29:10 +0000 [DEBUG] worker3: Payment processed
+18/May/2025:15:29:11 +0000 [CRITICAL] worker3: Cache miss
+18/May/2025:15:29:12 +0000 [WARNING] worker2: Failed to connect to database

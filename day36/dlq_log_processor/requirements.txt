@@ -1,0 +1,15 @@
+redis==5.0.4
+rq==1.16.1
+fastapi==0.110.2
+uvicorn==0.29.0
+pydantic==2.7.1
+pytest==8.2.0
+pytest-asyncio==0.23.6
+requests==2.31.0
+structlog==24.1.0
+rich==13.7.1
+prometheus-client==0.20.0
+jinja2==3.1.4
+python-multipart==0.0.9
+websockets==12.0
+aiofiles==23.2.1
