@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Log Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>🔥 Real-time Log Processing Dashboard</h1>
+        <div class="status-indicator" id="status">● Connected</div>
+    </header>
+    
+    <main class="dashboard-grid">
+        <!-- Real-time Metrics Cards -->
+        <div class="metrics-row">
+            <div class="metric-card">
+                <h3>Events/Second</h3>
+                <div class="metric-value" id="event-rate">0</div>
+            </div>
+            
+            <div class="metric-card error">
+                <h3>Error Rate</h3>
+                <div class="metric-value" id="error-rate">0%</div>
+            </div>
+            
+            <div class="metric-card">
+                <h3>Avg Response Time</h3>
+                <div class="metric-value" id="response-time">0ms</div>
+            </div>
+            
+            <div class="metric-card">
+                <h3>Active Users</h3>
+                <div class="metric-value" id="active-users">0</div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="chart-container">
+            <h3>Error Rate Over Time</h3>
+            <div id="error-chart" class="chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Response Time Trend</h3>
+            <div id="response-chart" class="chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Event Volume</h3>
+            <div id="volume-chart" class="chart"></div>
+        </div>
+        
+        <!-- Top Errors -->
+        <div class="error-list">
+            <h3>Top Error Types</h3>
+            <div id="top-errors">No errors detected</div>
+        </div>
+    </main>
+    
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
