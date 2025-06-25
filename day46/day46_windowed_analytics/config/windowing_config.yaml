@@ -1,0 +1,26 @@
+windowing:
+  default_window_size: 300  # 5 minutes in seconds
+  grace_period: 60          # 1 minute for late arrivals
+  max_active_windows: 100   # Memory management
+  timezone: "UTC"
+  
+window_types:
+  - name: "5min"
+    size: 300
+    retention: 3600  # 1 hour
+  - name: "1hour" 
+    size: 3600
+    retention: 86400  # 24 hours
+  - name: "1day"
+    size: 86400
+    retention: 604800  # 7 days
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  
+web:
+  host: "0.0.0.0"
+  port: 8000
+  debug: true

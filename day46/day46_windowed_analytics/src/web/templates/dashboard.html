@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windowed Analytics Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .metric-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected { background-color: #4CAF50; }
+        .status-loading { background-color: #FF9800; }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🕒 Time-Based Windowing Analytics</h1>
+            <p>Real-time log analytics with 5-minute and hourly time windows</p>
+            <div id="connectionStatus">
+                <span class="status-indicator status-loading"></span>
+                Connecting to real-time data...
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Current 5-Minute Window</div>
+                <div class="metric-value" id="currentEvents">-</div>
+                <div class="metric-label">Events processed</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Error Rate</div>
+                <div class="metric-value" id="errorRate">-</div>
+                <div class="metric-label">Percentage of errors</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Active Windows</div>
+                <div class="metric-value" id="activeWindows">-</div>
+                <div class="metric-label">Windows in memory</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Avg Response Time</div>
+                <div class="metric-value" id="avgResponseTime">-</div>
+                <div class="metric-label">Milliseconds</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="metric-title">Event Volume (5-Minute Windows)</div>
+                <div id="volumeChart" style="height: 400px;"></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="metric-title">Error Rate Trend</div>
+                <div id="errorChart" style="height: 400px;"></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="metric-title">Service Distribution</div>
+                <div id="serviceChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WindowingDashboard {
+            constructor() {
+                this.ws = null;
+                this.data = {
+                    "5min": [],
+                    "1hour": []
+                };
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 10;
+                this.connectWebSocket();
+                this.initCharts();
+            }
+
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+                this.ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    this.reconnectAttempts = 0;
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<span class="status-indicator status-connected"></span>Connected to real-time data';
+                };
+
+                this.ws.onmessage = (event) => {
+                    console.log('Received WebSocket message:', event.data);
+                    try {
+                        const update = JSON.parse(event.data);
+                        if (update.type === 'metrics_update') {
+                            console.log('Processing metrics update:', update.data);
+                            this.updateData(update.data);
+                            this.updateCharts();
+                            this.updateMetrics();
+                        } else if (update.type === 'error') {
+                            console.error('Server error:', update.message);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+
+                this.ws.onclose = (event) => {
+                    console.log('WebSocket disconnected:', event.code, event.reason);
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<span class="status-indicator status-loading"></span>Reconnecting...';
+                    
+                    // Attempt to reconnect with exponential backoff
+                    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.reconnectAttempts++;
+                        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 10000);
+                        console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                        setTimeout(() => this.connectWebSocket(), delay);
+                    } else {
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<span class="status-indicator status-loading"></span>Connection failed - please refresh page';
+                    }
+                };
+
+                this.ws.onerror = (error) => {
+                    console.error('WebSocket Error:', error);
+                };
+            }
+
+            updateData(newData) {
+                this.data = newData;
+            }
+
+            updateMetrics() {
+                const current5min = this.data["5min"][0];
+                if (current5min && current5min.metrics) {
+                    document.getElementById('currentEvents').textContent = 
+                        current5min.metrics.count || 0;
+                    
+                    // Calculate error rate if not present
+                    let errorRate = current5min.metrics.error_rate;
+                    if (errorRate === undefined && current5min.metrics.error_count !== undefined) {
+                        errorRate = current5min.metrics.error_count / current5min.metrics.count;
+                    }
+                    document.getElementById('errorRate').textContent = 
+                        `${((errorRate || 0) * 100).toFixed(1)}%`;
+                    
+                    document.getElementById('avgResponseTime').textContent = 
+                        `${(current5min.metrics.avg_response_time || 0).toFixed(0)}ms`;
+                }
+
+                document.getElementById('activeWindows').textContent = 
+                    this.data.active_windows || 0;
+            }
+
+            initCharts() {
+                // Volume Chart
+                const volumeLayout = {
+                    title: '',
+                    xaxis: { title: 'Time' },
+                    yaxis: { title: 'Events' },
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: 'white'
+                };
+                Plotly.newPlot('volumeChart', [], volumeLayout);
+
+                // Error Rate Chart  
+                const errorLayout = {
+                    title: '',
+                    xaxis: { title: 'Time' },
+                    yaxis: { title: 'Error Rate %' },
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: 'white'
+                };
+                Plotly.newPlot('errorChart', [], errorLayout);
+
+                // Service Chart
+                const serviceLayout = {
+                    title: '',
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: 'white'
+                };
+                Plotly.newPlot('serviceChart', [], serviceLayout);
+            }
+
+            updateCharts() {
+                console.log('Updating charts with data:', this.data);
+                this.updateVolumeChart();
+                this.updateErrorChart();
+                this.updateServiceChart();
+            }
+
+            updateVolumeChart() {
+                const data = this.data["5min"];
+                if (!data || data.length === 0) {
+                    console.log('No 5min data for volume chart');
+                    return;
+                }
+                
+                const x = data.map(d => new Date(d.start_time * 1000));
+                const y = data.map(d => d.metrics ? d.metrics.count : 0);
+
+                console.log('Volume chart data:', { x, y });
+
+                const trace = {
+                    x: x,
+                    y: y,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Event Count',
+                    line: { color: '#2196F3', width: 3 },
+                    marker: { size: 6 }
+                };
+
+                const layout = {
+                    title: 'Event Volume (5-Minute Windows)',
+                    xaxis: { 
+                        title: 'Time',
+                        type: 'date'
+                    },
+                    yaxis: { 
+                        title: 'Events',
+                        rangemode: 'tozero'
+                    },
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: 'white',
+                    showlegend: true,
+                    hovermode: 'x unified'
+                };
+
+                Plotly.react('volumeChart', [trace], layout);
+            }
+
+            updateErrorChart() {
+                const data = this.data["5min"];
+                if (!data || data.length === 0) {
+                    console.log('No 5min data for error chart');
+                    return;
+                }
+                
+                const x = data.map(d => new Date(d.start_time * 1000));
+                const y = data.map(d => {
+                    if (!d.metrics) return 0;
+                    // Calculate error rate if not present
+                    let errorRate = d.metrics.error_rate;
+                    if (errorRate === undefined && d.metrics.error_count !== undefined && d.metrics.count > 0) {
+                        errorRate = d.metrics.error_count / d.metrics.count;
+                    }
+                    return (errorRate || 0) * 100;
+                });
+
+                console.log('Error chart data:', { x, y });
+
+                const trace = {
+                    x: x,
+                    y: y,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Error Rate %',
+                    line: { color: '#f44336', width: 3 },
+                    marker: { size: 6 }
+                };
+
+                const layout = {
+                    title: 'Error Rate Trend (5-Minute Windows)',
+                    xaxis: { 
+                        title: 'Time',
+                        type: 'date'
+                    },
+                    yaxis: { 
+                        title: 'Error Rate %',
+                        rangemode: 'tozero'
+                    },
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: 'white',
+                    showlegend: true,
+                    hovermode: 'x unified'
+                };
+
+                Plotly.react('errorChart', [trace], layout);
+            }
+
+            updateServiceChart() {
+                const latest = this.data["5min"][0];
+                if (!latest || !latest.metrics || !latest.metrics.services) {
+                    console.log('No service data available:', latest);
+                    return;
+                }
+
+                const services = latest.metrics.services;
+                const labels = Object.keys(services);
+                const values = Object.values(services);
+
+                console.log('Service chart data:', { labels, values });
+
+                // Only show pie chart if we have meaningful service data
+                if (labels.length > 0 && labels[0] !== 'unknown') {
+                    const trace = {
+                        labels: labels,
+                        values: values,
+                        type: 'pie',
+                        textinfo: 'label+percent',
+                        textposition: 'outside'
+                    };
+                    
+                    const layout = {
+                        title: 'Service Distribution',
+                        plot_bgcolor: '#f8f9fa',
+                        paper_bgcolor: 'white'
+                    };
+                    
+                    Plotly.react('serviceChart', [trace], layout);
+                } else {
+                    // Show a message when no service data is available
+                    const trace = {
+                        labels: ['No Service Data'],
+                        values: [1],
+                        type: 'pie',
+                        textinfo: 'label',
+                        textposition: 'outside'
+                    };
+                    
+                    const layout = {
+                        title: 'Service Distribution',
+                        plot_bgcolor: '#f8f9fa',
+                        paper_bgcolor: 'white'
+                    };
+                    
+                    Plotly.react('serviceChart', [trace], layout);
+                }
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WindowingDashboard();
+        });
+    </script>
+</body>
+</html>

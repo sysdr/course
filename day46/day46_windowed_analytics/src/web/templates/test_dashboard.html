@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Test</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .chart-container { margin: 20px 0; }
+        .debug { background-color: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Test</h1>
+    <div id="status" class="status disconnected">Connecting...</div>
+    <div id="debug" class="debug">Debug info will appear here...</div>
+    <div class="chart-container">
+        <h3>Event Volume (5min windows)</h3>
+        <div id="volumeChart" style="height: 400px;"></div>
+    </div>
+    <div class="chart-container">
+        <h3>Error Rate (5min windows)</h3>
+        <div id="errorChart" style="height: 400px;"></div>
+    </div>
+    
+    <script>
+        class TestDashboard {
+            constructor() {
+                this.ws = null;
+                this.data = { "5min": [], "1hour": [] };
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.connectWebSocket();
+                this.initCharts();
+                this.updateDebug("Dashboard initialized");
+            }
+
+            updateDebug(message) {
+                const debug = document.getElementById('debug');
+                const timestamp = new Date().toLocaleTimeString();
+                debug.innerHTML += `[${timestamp}] ${message}<br>`;
+                console.log(`[${timestamp}] ${message}`);
+            }
+
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+                this.ws.onopen = () => {
+                    this.updateDebug('WebSocket connected');
+                    document.getElementById('status').textContent = 'Connected';
+                    document.getElementById('status').className = 'status connected';
+                    this.reconnectAttempts = 0;
+                };
+
+                this.ws.onmessage = (event) => {
+                    this.updateDebug(`Received: ${event.data.substring(0, 100)}...`);
+                    try {
+                        const update = JSON.parse(event.data);
+                        if (update.type === 'metrics_update') {
+                            this.updateDebug(`Processing metrics update with ${update.data['5min']?.length || 0} 5min windows`);
+                            this.updateData(update.data);
+                            this.updateCharts();
+                        } else if (update.type === 'error') {
+                            this.updateDebug(`Error from server: ${update.message}`);
+                        }
+                    } catch (error) {
+                        this.updateDebug(`Parse error: ${error.message}`);
+                    }
+                };
+
+                this.ws.onclose = (event) => {
+                    this.updateDebug(`WebSocket disconnected: ${event.code} ${event.reason}`);
+                    document.getElementById('status').textContent = 'Disconnected';
+                    document.getElementById('status').className = 'status disconnected';
+                    
+                    // Attempt to reconnect
+                    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.reconnectAttempts++;
+                        this.updateDebug(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+                        setTimeout(() => this.connectWebSocket(), 2000);
+                    }
+                };
+
+                this.ws.onerror = (error) => {
+                    this.updateDebug(`WebSocket error: ${error}`);
+                };
+            }
+
+            updateData(newData) {
+                this.data = newData;
+                this.updateDebug(`Updated data: 5min=${this.data["5min"]?.length || 0} windows, 1hour=${this.data["1hour"]?.length || 0} windows`);
+            }
+
+            initCharts() {
+                const layout = {
+                    title: 'Initializing...',
+                    xaxis: { title: 'Time' },
+                    yaxis: { title: 'Value' },
+                    showlegend: true
+                };
+                
+                Plotly.newPlot('volumeChart', [{
+                    x: [],
+                    y: [],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Event Count'
+                }], layout);
+                
+                Plotly.newPlot('errorChart', [{
+                    x: [],
+                    y: [],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Error Rate %'
+                }], layout);
+                
+                this.updateDebug("Charts initialized");
+            }
+
+            updateCharts() {
+                this.updateDebug("Updating charts...");
+                this.updateVolumeChart();
+                this.updateErrorChart();
+            }
+
+            updateVolumeChart() {
+                const data = this.data["5min"];
+                if (!data || data.length === 0) {
+                    this.updateDebug('No data for volume chart');
+                    return;
+                }
+                
+                const x = data.map(d => new Date(d.start_time * 1000));
+                const y = data.map(d => {
+                    if (!d.metrics) return 0;
+                    return d.metrics.count || 0;
+                });
+
+                this.updateDebug(`Volume chart data: ${x.length} points, max value: ${Math.max(...y)}`);
+
+                const trace = {
+                    x: x,
+                    y: y,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Event Count',
+                    line: { color: '#1f77b4' },
+                    marker: { size: 6 }
+                };
+
+                const layout = {
+                    title: 'Event Count (5min windows)',
+                    xaxis: { 
+                        title: 'Time',
+                        type: 'date'
+                    },
+                    yaxis: { 
+                        title: 'Count',
+                        rangemode: 'tozero'
+                    },
+                    showlegend: true,
+                    hovermode: 'x unified'
+                };
+
+                Plotly.react('volumeChart', [trace], layout);
+                this.updateDebug("Volume chart updated");
+            }
+
+            updateErrorChart() {
+                const data = this.data["5min"];
+                if (!data || data.length === 0) {
+                    this.updateDebug('No data for error chart');
+                    return;
+                }
+                
+                const x = data.map(d => new Date(d.start_time * 1000));
+                const y = data.map(d => {
+                    if (!d.metrics) return 0;
+                    let errorRate = d.metrics.error_rate;
+                    if (errorRate === undefined && d.metrics.error_count !== undefined && d.metrics.count > 0) {
+                        errorRate = d.metrics.error_count / d.metrics.count;
+                    }
+                    return (errorRate || 0) * 100;
+                });
+
+                this.updateDebug(`Error chart data: ${x.length} points, max error rate: ${Math.max(...y).toFixed(2)}%`);
+
+                const trace = {
+                    x: x,
+                    y: y,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Error Rate %',
+                    line: { color: '#d62728' },
+                    marker: { size: 6 }
+                };
+
+                const layout = {
+                    title: 'Error Rate % (5min windows)',
+                    xaxis: { 
+                        title: 'Time',
+                        type: 'date'
+                    },
+                    yaxis: { 
+                        title: 'Error Rate (%)',
+                        rangemode: 'tozero'
+                    },
+                    showlegend: true,
+                    hovermode: 'x unified'
+                };
+
+                Plotly.react('errorChart', [trace], layout);
+                this.updateDebug("Error chart updated");
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TestDashboard();
+        });
+    </script>
+</body>
+</html> 
