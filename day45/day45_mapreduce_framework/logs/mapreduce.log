@@ -1,0 +1,21 @@
+2025-06-25 11:13:10,594 - MapReduce.job_1750830190 - INFO - Starting MapReduce job job_1750830190
+2025-06-25 11:13:10,594 - JobCoordinator - INFO - Submitted job job_1750830190
+2025-06-25 11:13:10,594 - MapReduce.job_1750830190 - INFO - Starting map phase
+2025-06-25 11:13:10,644 - MapReduce.job_1750830190 - INFO - Starting MapReduce job job_1750830190
+2025-06-25 11:13:10,645 - JobCoordinator - INFO - Submitted job job_1750830190
+2025-06-25 11:13:10,645 - MapReduce.job_1750830190 - INFO - Starting map phase
+2025-06-25 11:13:10,682 - MapReduce.job_1750830190 - INFO - Starting MapReduce job job_1750830190
+2025-06-25 11:13:10,682 - JobCoordinator - INFO - Submitted job job_1750830190
+2025-06-25 11:13:10,683 - MapReduce.job_1750830190 - INFO - Starting map phase
+2025-06-25 11:13:11,228 - MapReduce.job_1750830190 - INFO - Completed map task for chunk 0
+2025-06-25 11:13:11,233 - MapReduce.job_1750830190 - INFO - Completed map task for chunk 0
+2025-06-25 11:13:11,305 - MapReduce.job_1750830190 - INFO - Starting shuffle phase
+2025-06-25 11:13:11,313 - MapReduce.job_1750830190 - ERROR - Job job_1750830190 failed: Extra data: line 1 column 975011 (char 975010)
+2025-06-25 11:13:11,314 - MapReduce.job_1750830190 - INFO - Starting shuffle phase
+2025-06-25 11:13:11,314 - JobCoordinator - ERROR - Job job_1750830190 failed: Extra data: line 1 column 975011 (char 975010)
+2025-06-25 11:13:11,322 - MapReduce.job_1750830190 - ERROR - Job job_1750830190 failed: Extra data: line 1 column 975011 (char 975010)
+2025-06-25 11:13:11,322 - JobCoordinator - ERROR - Job job_1750830190 failed: Extra data: line 1 column 975011 (char 975010)
+2025-06-25 11:13:14,160 - MapReduce.job_1750830190 - INFO - Completed map task for chunk 0
+2025-06-25 11:13:14,220 - MapReduce.job_1750830190 - INFO - Starting shuffle phase
+2025-06-25 11:13:14,578 - MapReduce.job_1750830190 - INFO - Starting reduce phase
+2025-06-25 11:13:20,435 - MapReduce.job_1750830190 - INFO - MapReduce job job_1750830190 completed successfully

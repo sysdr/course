@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapReduce Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .job-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .jobs-table {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .status-completed { color: #28a745; }
+        .status-running { color: #007bff; }
+        .status-failed { color: #dc3545; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 MapReduce Dashboard</h1>
+        <p>Distributed Log Processing Framework</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>📊 System Stats</h3>
+            <div id="system-stats">
+                <p>Active Jobs: <span id="active-jobs">0</span></p>
+                <p>Completed Jobs: <span id="completed-jobs">0</span></p>
+                <p>Total Processed: <span id="total-processed">0</span> records</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>⚡ Performance</h3>
+            <div id="performance-stats">
+                <p>Avg. Processing Time: <span id="avg-time">0</span>s</p>
+                <p>Throughput: <span id="throughput">0</span> records/sec</p>
+                <p>Success Rate: <span id="success-rate">100</span>%</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="job-controls">
+        <h3>🎯 Submit New Job</h3>
+        <form id="job-form">
+            <select id="analysis-type">
+                <option value="word_count">Word Count Analysis</option>
+                <option value="pattern_frequency">Pattern Frequency</option>
+                <option value="service_distribution">Service Distribution</option>
+                <option value="comprehensive">Comprehensive Analysis</option>
+            </select>
+            <input type="number" id="num-workers" placeholder="Number of Workers" value="4" min="1" max="16">
+            <button type="submit">🚀 Start Analysis</button>
+        </form>
+    </div>
+
+    <div class="jobs-table">
+        <h3 style="padding: 20px; margin: 0;">📋 Job History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Job ID</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Phase</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="jobs-tbody">
+                <!-- Jobs will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // WebSocket connection for real-time updates
+        let ws = null;
+        
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws`);
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'job_update') {
+                    updateJobsTable(data.jobs);
+                    updateStats(data.jobs);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket connection closed, attempting to reconnect...');
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.log('WebSocket error:', error);
+            };
+        }
+        
+        // Initialize WebSocket connection
+        connectWebSocket();
+
+        // Submit job form
+        document.getElementById('job-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const analysisType = document.getElementById('analysis-type').value;
+            const numWorkers = parseInt(document.getElementById('num-workers').value);
+            
+            const response = await fetch('/api/jobs/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    analysis_type: analysisType,
+                    num_workers: numWorkers,
+                    input_files: ['data/input/sample_logs.txt'] // Default sample
+                })
+            });
+            
+            const result = await response.json();
+            console.log('Job submitted:', result);
+        });
+
+        function updateJobsTable(jobs) {
+            const tbody = document.getElementById('jobs-tbody');
+            tbody.innerHTML = '';
+            
+            jobs.forEach(job => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${job.job_id}</td>
+                    <td><span class="status-${job.status}">${job.status}</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${job.progress}%"></div>
+                        </div>
+                        ${job.progress.toFixed(1)}%
+                    </td>
+                    <td>${job.current_phase}</td>
+                    <td>${((Date.now() / 1000) - job.start_time).toFixed(1)}s</td>
+                    <td>
+                        <button onclick="viewJobDetails('${job.job_id}')">View</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats(jobs) {
+            const activeJobs = jobs.filter(j => j.status === 'mapping' || j.status === 'reducing' || j.status === 'shuffling').length;
+            const completedJobs = jobs.filter(j => j.status === 'completed').length;
+            const failedJobs = jobs.filter(j => j.status === 'failed').length;
+            
+            // Calculate total processed records (sum of records_processed from all jobs)
+            const totalProcessed = jobs.reduce((sum, job) => sum + (job.records_processed || 0), 0);
+            
+            // Calculate performance metrics using backend data
+            const completedJobsWithTime = jobs.filter(j => j.status === 'completed' && j.execution_time);
+            const avgProcessingTime = completedJobsWithTime.length > 0 
+                ? completedJobsWithTime.reduce((sum, job) => sum + job.execution_time, 0) / completedJobsWithTime.length
+                : 0;
+            
+            // Calculate throughput (records per second) using backend data
+            const totalExecutionTime = jobs.reduce((sum, job) => sum + (job.execution_time || 0), 0);
+            const throughput = totalExecutionTime > 0 ? totalProcessed / totalExecutionTime : 0;
+            
+            // Calculate success rate
+            const totalJobs = jobs.length;
+            const successRate = totalJobs > 0 ? ((completedJobs / totalJobs) * 100) : 100;
+            
+            // Update DOM elements
+            document.getElementById('active-jobs').textContent = activeJobs;
+            document.getElementById('completed-jobs').textContent = completedJobs;
+            document.getElementById('total-processed').textContent = totalProcessed;
+            document.getElementById('avg-time').textContent = avgProcessingTime.toFixed(2);
+            document.getElementById('throughput').textContent = throughput.toFixed(2);
+            document.getElementById('success-rate').textContent = successRate.toFixed(1);
+        }
+
+        function viewJobDetails(jobId) {
+            // Implement job details view
+            console.log('Viewing job:', jobId);
+        }
+
+        // Initial load
+        fetch('/api/jobs')
+            .then(response => response.json())
+            .then(data => {
+                updateJobsTable(data.jobs);
+                updateStats(data.jobs);
+            });
+
+        // Periodic refresh every 5 seconds as backup
+        setInterval(() => {
+            fetch('/api/jobs')
+                .then(response => response.json())
+                .then(data => {
+                    updateJobsTable(data.jobs);
+                    updateStats(data.jobs);
+                })
+                .catch(error => console.log('Periodic refresh failed:', error));
+        }, 5000);
+    </script>
+</body>
+</html>
