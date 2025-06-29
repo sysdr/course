@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaly Detection Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+            background: #f8f9fa;
+            color: #202124;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 3px solid #3b82f6;
+        }
+        
+        .header h1 {
+            color: #3b82f6;
+            font-size: 1.5rem;
+            font-weight: 400;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .stat-card h3 {
+            color: #5f6368;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .anomaly-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .anomaly-list h3 {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            color: #3b82f6;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 1px solid #e8eaed;
+        }
+        
+        .anomaly-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e8eaed;
+            transition: background-color 0.2s;
+        }
+        
+        .anomaly-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .anomaly-item:last-child {
+            border-bottom: none;
+        }
+        
+        .anomaly-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .anomaly-type {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .confidence {
+            color: #5f6368;
+            font-size: 0.875rem;
+        }
+        
+        .anomaly-details {
+            color: #5f6368;
+            font-size: 0.875rem;
+        }
+        
+        .status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #34a853;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .processing-indicator {
+            color: #34a853;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .simulation-panel {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .simulation-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .control-group {
+            flex: 1;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e8eaed;
+            border-radius: 4px;
+        }
+        
+        .simulation-btn {
+            padding: 0.5rem 1rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .simulation-btn.stop {
+            background: #ea4335;
+        }
+        
+        .simulation-status {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="status"></span>Anomaly Detection Dashboard - Day 49</h1>
+        <div class="processing-indicator">
+            <span class="status"></span>
+            Real-time Processing Active
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Logs Processed</h3>
+                <div class="value" id="total-logs">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Anomalies Detected</h3>
+                <div class="value" id="anomalies-detected">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Detection Rate</h3>
+                <div class="value" id="detection-rate">0%</div>
+            </div>
+            <div class="stat-card">
+                <h3>True Positives</h3>
+                <div class="value" id="true-positives">0</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3 style="margin-bottom: 1rem; color: #3b82f6;">Real-time Anomaly Detection</h3>
+            <div id="anomaly-chart" style="height: 400px;"></div>
+        </div>
+        
+        <div class="anomaly-list">
+            <h3>Recent Anomalies</h3>
+            <div id="anomaly-items">
+                <div style="padding: 2rem; text-align: center; color: #5f6368;">
+                    No anomalies detected yet. Monitoring incoming logs...
+                </div>
+            </div>
+        </div>
+        
+        <div class="simulation-panel">
+            <h3>Simulation Controls</h3>
+            <div class="simulation-controls">
+                <div class="control-group">
+                    <label>Anomaly Type:</label>
+                    <select id="anomaly-type">
+                        <option value="slow_response">Slow Response</option>
+                        <option value="unusual_size">Unusual Size</option>
+                        <option value="suspicious_agent">Suspicious User Agent</option>
+                        <option value="temporal">Temporal Anomaly</option>
+                        <option value="high_frequency">High Frequency Requests</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Count:</label>
+                    <input type="number" id="anomaly-count" value="5" min="1" max="20">
+                </div>
+                <div class="control-group">
+                    <label>Interval (seconds):</label>
+                    <input type="number" id="anomaly-interval" value="2" min="1" max="10">
+                </div>
+                <button id="start-simulation" class="simulation-btn">Start Simulation</button>
+                <button id="stop-simulation" class="simulation-btn stop" disabled>Stop Simulation</button>
+            </div>
+            <div class="simulation-status">
+                <span id="simulation-status">Ready to simulate</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5001');
+        
+        // Chart data
+        let chartData = {
+            x: [],
+            y: [],
+            mode: 'lines+markers',
+            name: 'Anomaly Confidence',
+            line: { color: '#3b82f6' },
+            marker: { color: '#3b82f6' }
+        };
+        
+        let anomalyData = {
+            x: [],
+            y: [],
+            mode: 'markers',
+            name: 'Detected Anomalies',
+            marker: { 
+                color: '#ea4335',
+                size: 10,
+                symbol: 'diamond'
+            }
+        };
+        
+        // Initialize chart
+        Plotly.newPlot('anomaly-chart', [chartData, anomalyData], {
+            title: '',
+            xaxis: { title: 'Time' },
+            yaxis: { title: 'Confidence Score' },
+            showlegend: true,
+            plot_bgcolor: '#f8f9fa',
+            paper_bgcolor: 'white'
+        });
+        
+        socket.on('log_processed', function(data) {
+            const { log, result, stats } = data;
+            
+            // Update statistics
+            document.getElementById('total-logs').textContent = stats.total_logs;
+            document.getElementById('anomalies-detected').textContent = stats.anomalies_detected;
+            document.getElementById('detection-rate').textContent = 
+                (stats.detection_rate * 100).toFixed(1) + '%';
+            document.getElementById('true-positives').textContent = stats.true_positives;
+            
+            // Update chart
+            const timestamp = new Date(result.timestamp);
+            chartData.x.push(timestamp);
+            chartData.y.push(result.confidence);
+            
+            if (result.is_anomaly) {
+                anomalyData.x.push(timestamp);
+                anomalyData.y.push(result.confidence);
+            }
+            
+            // Keep last 50 points
+            if (chartData.x.length > 50) {
+                chartData.x.shift();
+                chartData.y.shift();
+            }
+            
+            Plotly.redraw('anomaly-chart');
+            
+            // Update anomaly list
+            if (result.is_anomaly) {
+                updateAnomalyList(stats.recent_anomalies);
+            }
+        });
+        
+        function updateAnomalyList(anomalies) {
+            const container = document.getElementById('anomaly-items');
+            
+            if (anomalies.length === 0) {
+                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: #5f6368;">No anomalies detected yet. Monitoring incoming logs...</div>';
+                return;
+            }
+            
+            container.innerHTML = anomalies.reverse().map(anomaly => `
+                <div class="anomaly-item">
+                    <div class="anomaly-header">
+                        <span class="anomaly-type">${anomaly.type}</span>
+                        <span class="confidence">Confidence: ${(anomaly.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="anomaly-details">
+                        ${new Date(anomaly.timestamp).toLocaleString()} - 
+                        Response Time: ${Math.round(anomaly.details.response_time)}ms
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        socket.on('connected', function(data) {
+            console.log('Connected to anomaly detection dashboard');
+        });
+        
+        // Simulation controls
+        let simulationInterval = null;
+        
+        document.getElementById('start-simulation').addEventListener('click', function() {
+            const anomalyType = document.getElementById('anomaly-type').value;
+            const count = parseInt(document.getElementById('anomaly-count').value);
+            const interval = parseInt(document.getElementById('anomaly-interval').value);
+            
+            // Send simulation request to backend
+            socket.emit('start_simulation', {
+                anomaly_type: anomalyType,
+                count: count,
+                interval: interval
+            });
+            
+            // Update UI
+            document.getElementById('start-simulation').disabled = true;
+            document.getElementById('stop-simulation').disabled = false;
+            document.getElementById('simulation-status').textContent = 
+                `Simulating ${count} ${anomalyType} anomalies every ${interval} seconds...`;
+        });
+        
+        document.getElementById('stop-simulation').addEventListener('click', function() {
+            // Send stop simulation request
+            socket.emit('stop_simulation');
+            
+            // Update UI
+            document.getElementById('start-simulation').disabled = false;
+            document.getElementById('stop-simulation').disabled = true;
+            document.getElementById('simulation-status').textContent = 'Simulation stopped';
+        });
+        
+        // Handle simulation responses
+        socket.on('simulation_started', function(data) {
+            console.log('Simulation started:', data);
+        });
+        
+        socket.on('simulation_stopped', function(data) {
+            console.log('Simulation stopped:', data);
+        });
+        
+        socket.on('simulation_error', function(data) {
+            console.error('Simulation error:', data);
+            document.getElementById('simulation-status').textContent = 'Error: ' + data.error;
+        });
+    </script>
+</body>
+</html>
