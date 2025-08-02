@@ -2,7 +2,7 @@ fastapi==0.110.3
 uvicorn==0.29.0
 pandas==2.2.2
 numpy==1.26.4
-scipy==1.13.0
+scipy==1.11.4
 scikit-learn==1.4.2
 redis==5.0.4
 aiofiles==23.2.1
