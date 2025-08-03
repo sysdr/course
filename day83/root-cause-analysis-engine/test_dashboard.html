@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 5px; }
+        #incidentList { margin-bottom: 20px; }
+        .incident-item { cursor: pointer; padding: 10px; border: 1px solid #eee; margin-bottom: 5px; }
+        .incident-item:hover { background-color: #f5f5f5; }
+        #causalGraph { height: 500px; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard Test</h1>
+        
+        <div class="card">
+            <h2>Incidents</h2>
+            <div id="incidentList"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Timeline</h2>
+            <div id="timelineContainer"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Causal Graph</h2>
+            <div id="causalGraph"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Debug Info</h2>
+            <h3>Selected Incident:</h3>
+            <pre id="selectedIncidentJson"></pre>
+            <h3>Causal Graph Data:</h3>
+            <pre id="causalGraphJson"></pre>
+        </div>
+    </div>
+
+    <script>
+        class DashboardTest {
+            constructor() {
+                this.incidents = [];
+                this.currentIncident = null;
+                this.loadIncidents();
+            }
+
+            async loadIncidents() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/incidents');
+                    this.incidents = await response.json();
+                    this.renderIncidents();
+                    console.log('Loaded incidents:', this.incidents);
+                } catch (error) {
+                    console.error('Failed to load incidents:', error);
+                    document.getElementById('incidentList').innerHTML = 'Error loading incidents';
+                }
+            }
+
+            renderIncidents() {
+                const container = document.getElementById('incidentList');
+                if (!this.incidents || this.incidents.length === 0) {
+                    container.innerHTML = 'No incidents found';
+                    return;
+                }
+
+                const html = this.incidents.map(incident => {
+                    return `
+                        <div class="incident-item" onclick="app.selectIncident('${incident.incident_id}')">
+                            Incident ${incident.incident_id} - 
+                            ${incident.root_causes && incident.root_causes.length > 0 ? 
+                                incident.root_causes[0].service + ': ' + incident.root_causes[0].description : 'No root cause'}
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            }
+
+            async selectIncident(incidentId) {
+                console.log('Selected incident:', incidentId);
+                const incident = this.incidents.find(i => i.incident_id === incidentId);
+                if (!incident) return;
+
+                this.currentIncident = incident;
+                document.getElementById('selectedIncidentJson').textContent = JSON.stringify(incident, null, 2);
+                
+                this.renderTimeline(incident);
+                await this.loadCausalGraph(incidentId);
+            }
+
+            renderTimeline(incident) {
+                const container = document.getElementById('timelineContainer');
+                
+                if (!incident.timeline || incident.timeline.length === 0) {
+                    container.innerHTML = 'No timeline data';
+                    return;
+                }
+
+                const html = incident.timeline.map(event => {
+                    return `
+                        <div>
+                            <strong>${event.sequence_id}. ${event.service} (${event.level})</strong>: 
+                            ${event.message} - ${event.relative_time}
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            }
+
+            async loadCausalGraph(incidentId) {
+                try {
+                    const response = await fetch(`http://localhost:8000/api/causal-graph/${incidentId}`);
+                    const graphData = await response.json();
+                    console.log('Causal graph data:', graphData);
+                    document.getElementById('causalGraphJson').textContent = JSON.stringify(graphData, null, 2);
+                    this.renderCausalGraph(graphData);
+                } catch (error) {
+                    console.error('Failed to load causal graph:', error);
+                    document.getElementById('causalGraph').innerHTML = 'Failed to load causal graph';
+                }
+            }
+
+            renderCausalGraph(graphData) {
+                if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
+                    document.getElementById('causalGraph').innerHTML = 'No graph data available';
+                    return;
+                }
+
+                // Create network visualization using Plotly
+                const nodeTrace = {
+                    x: graphData.nodes.map((_, i) => Math.cos(2 * Math.PI * i / graphData.nodes.length)),
+                    y: graphData.nodes.map((_, i) => Math.sin(2 * Math.PI * i / graphData.nodes.length)),
+                    mode: 'markers+text',
+                    type: 'scatter',
+                    text: graphData.nodes.map(n => n.service),
+                    textposition: 'middle center',
+                    marker: {
+                        size: graphData.nodes.map(n => n.level === 'ERROR' ? 20 : 15),
+                        color: graphData.nodes.map(n => n.level === 'ERROR' ? 'red' : 
+                                                 n.level === 'WARNING' ? 'orange' : 'blue'),
+                        line: { width: 2, color: 'white' }
+                    },
+                    hovertemplate: '<b>%{text}</b><br>Level: %{customdata}<extra></extra>',
+                    customdata: graphData.nodes.map(n => n.level)
+                };
+
+                // Create edges
+                const edgeTraces = graphData.edges.map(edge => {
+                    const fromNode = graphData.nodes.find(n => n.id === edge.from);
+                    const toNode = graphData.nodes.find(n => n.id === edge.to);
+                    if (!fromNode || !toNode) return null;
+                    
+                    const fromIndex = graphData.nodes.indexOf(fromNode);
+                    const toIndex = graphData.nodes.indexOf(toNode);
+                    
+                    return {
+                        x: [
+                            Math.cos(2 * Math.PI * fromIndex / graphData.nodes.length),
+                            Math.cos(2 * Math.PI * toIndex / graphData.nodes.length),
+                            null
+                        ],
+                        y: [
+                            Math.sin(2 * Math.PI * fromIndex / graphData.nodes.length),
+                            Math.sin(2 * Math.PI * toIndex / graphData.nodes.length),
+                            null
+                        ],
+                        mode: 'lines',
+                        type: 'scatter',
+                        line: { width: 2, color: '#ccc' },
+                        showlegend: false,
+                        hoverinfo: 'none'
+                    };
+                }).filter(Boolean);
+
+                const layout = {
+                    title: `Causal Graph - Incident ${graphData.incident_id}`,
+                    showlegend: false,
+                    xaxis: { visible: false },
+                    yaxis: { visible: false },
+                    margin: { t: 50, l: 20, r: 20, b: 20 }
+                };
+
+                Plotly.newPlot('causalGraph', [nodeTrace, ...edgeTraces], layout, 
+                    { responsive: true });
+            }
+        }
+
+        const app = new DashboardTest();
+    </script>
+</body>
+</html>
