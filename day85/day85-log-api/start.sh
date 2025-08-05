@@ -2,6 +2,12 @@
 
 echo "🚀 Starting Day 85 Log Platform API..."
 
+# 1️⃣ Create virtual environment if missing
+if [ ! -d "venv" ]; then
+    echo "📦 Creating virtual environment..."
+    python3 -m venv venv
+fi
+
 # Activate virtual environment
 source venv/bin/activate
 
