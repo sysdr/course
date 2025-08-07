@@ -1,0 +1,13 @@
+*/node_modules
+*/target
+*/dist
+*/.git
+*/tests
+*/__pycache__
+*/.pytest_cache
+*/.coverage
+*/coverage
+*.pyc
+*.pyo
+*/venv
+*/.venv
