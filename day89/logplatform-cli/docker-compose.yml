@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  logplatform-cli:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: logplatform-cli
+    volumes:
+      - ~/.logplatform:/home/loguser/.logplatform
+    environment:
+      - LOGPLATFORM_DEBUG=1
+    networks:
+      - logplatform-network
+
+  # Mock API server for testing
+  mock-api:
+    image: python:3.11-slim
+    container_name: logplatform-mock-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./scripts/mock_api.py:/app/mock_api.py
+    working_dir: /app
+    command: python mock_api.py
+    networks:
+      - logplatform-network
+
+networks:
+  logplatform-network:
+    driver: bridge
