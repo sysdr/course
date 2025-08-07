@@ -1,0 +1,10 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+redis==5.0.1
+strawberry-graphql==0.214.0
+aioredis==2.0.1
+pydantic==2.5.0
+prometheus-client==0.19.0
+structlog==23.2.0
+asyncio-throttle==1.0.2
+psutil==5.9.6
