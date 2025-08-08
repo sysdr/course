@@ -1,0 +1,16 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pydantic==2.7.1
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+redis==5.0.4
+pytest==8.2.0
+pytest-asyncio==0.23.7
+httpx==0.27.0
+psutil==5.9.8
+aiofiles==23.2.1
+jinja2==3.1.4
+python-multipart==0.0.9
+structlog==24.1.0
+prometheus-client==0.20.0
+aiohttp==3.9.3

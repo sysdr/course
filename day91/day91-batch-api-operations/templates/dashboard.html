@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Batch API Operations Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; text-align: center; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #3b82f6; }
+        .metric-value { font-size: 32px; font-weight: bold; color: #1f2937; margin-bottom: 5px; }
+        .metric-label { color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+        .api-demo { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); margin-top: 20px; }
+        .demo-button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 5px; font-size: 14px; }
+        .demo-button:hover { background: #2563eb; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; background: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Batch API Operations Dashboard</h1>
+            <p><span class="status-indicator"></span>System Status: Operational</p>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ stats.batch_stats.total_batches_processed or 0 }}</div>
+                <div class="metric-label">Total Batches</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value">{{ (stats.batch_stats.total_logs_processed or 0) | int }}</div>
+                <div class="metric-label">Total Logs</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value">{{ "%.1f" | format(stats.batch_stats.throughput_per_second or 0) }}</div>
+                <div class="metric-label">Logs/Second</div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-value">{{ "%.1f%" | format(stats.batch_stats.success_rate or 0) }}</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+        </div>
+        
+        <div class="api-demo">
+            <h3>🧪 API Testing Interface</h3>
+            <p>Test batch operations directly from this dashboard:</p>
+            <button class="demo-button" onclick="testSmallBatch()">Test Small Batch (100 logs)</button>
+            <button class="demo-button" onclick="testLargeBatch()">Test Large Batch (1000 logs)</button>
+            <button class="demo-button" onclick="testQuery()">Test Batch Query</button>
+            <button class="demo-button" onclick="viewDocs()">View API Docs</button>
+            
+            <div id="test-results" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-family: monospace; white-space: pre-wrap; display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function testSmallBatch() {
+            showLoading();
+            try {
+                const logs = generateSampleLogs(100);
+                const response = await fetch('/api/v1/logs/batch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({logs: logs, chunk_size: 50})
+                });
+                const result = await response.json();
+                showResult(`Small Batch Test Results:\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                showResult(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testLargeBatch() {
+            showLoading();
+            try {
+                const logs = generateSampleLogs(1000);
+                const response = await fetch('/api/v1/logs/batch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({logs: logs, chunk_size: 200})
+                });
+                const result = await response.json();
+                showResult(`Large Batch Test Results:\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                showResult(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testQuery() {
+            showLoading();
+            try {
+                const response = await fetch('/api/v1/logs/batch/query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filters: {level: 'INFO', service: 'user-service'},
+                        limit: 50
+                    })
+                });
+                const result = await response.json();
+                showResult(`Batch Query Results:\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                showResult(`Error: ${error.message}`);
+            }
+        }
+        
+        function viewDocs() {
+            window.open('/docs', '_blank');
+        }
+        
+        function generateSampleLogs(count) {
+            const services = ['user-service', 'payment-service', 'inventory-service'];
+            const levels = ['INFO', 'WARN', 'ERROR', 'DEBUG'];
+            const logs = [];
+            
+            for (let i = 0; i < count; i++) {
+                logs.push({
+                    timestamp: new Date().toISOString(),
+                    level: levels[Math.floor(Math.random() * levels.length)],
+                    service: services[Math.floor(Math.random() * services.length)],
+                    message: `Sample log message ${i}`,
+                    metadata: {
+                        request_id: `req_${Math.floor(Math.random() * 10000)}`,
+                        user_id: `user_${Math.floor(Math.random() * 1000)}`
+                    }
+                });
+            }
+            return logs;
+        }
+        
+        function showLoading() {
+            const results = document.getElementById('test-results');
+            results.style.display = 'block';
+            results.textContent = 'Loading...';
+        }
+        
+        function showResult(text) {
+            const results = document.getElementById('test-results');
+            results.style.display = 'block';
+            results.textContent = text;
+        }
+        
+        // Auto-refresh page every 30 seconds
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
