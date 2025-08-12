@@ -1,0 +1,73 @@
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.status-connecting {
+  background: rgba(251, 211, 141, 0.2);
+  color: #d69e2e;
+  border-color: rgba(251, 211, 141, 0.4);
+}
+
+.status-connected {
+  background: rgba(152, 251, 152, 0.2);
+  color: #38a169;
+  border-color: rgba(152, 251, 152, 0.4);
+}
+
+.status-disconnecting {
+  background: rgba(203, 213, 225, 0.3);
+  color: #64748b;
+  border-color: rgba(203, 213, 225, 0.4);
+}
+
+.status-disconnected {
+  background: rgba(254, 202, 202, 0.3);
+  color: #e53e3e;
+  border-color: rgba(254, 202, 202, 0.4);
+}
+
+.status-error {
+  background: rgba(254, 202, 202, 0.4);
+  color: #c53030;
+  border-color: rgba(254, 202, 202, 0.6);
+  animation: pulse 2s infinite;
+}
+
+.status-icon {
+  font-size: 1rem;
+}
+
+.status-text {
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@media (max-width: 768px) {
+  .connection-status {
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+  
+  .connection-status button {
+    width: 100%;
+  }
+}
