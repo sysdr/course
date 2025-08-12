@@ -30,7 +30,7 @@ if command -v docker &> /dev/null && command -v docker-compose &> /dev/null; the
     done
     
     # Check frontend
-    if curl -s http://localhost:3000 > /dev/null; then
+    if curl -s http://localhost:3001 > /dev/null; then
         echo -e "${GREEN}[SUCCESS]${NC} Frontend is running"
     fi
     
@@ -77,8 +77,8 @@ fi
 echo ""
 echo "🎉 Log Viewer UI is starting up!"
 echo ""
-echo "📊 Dashboard: http://localhost:3000"
-echo "📋 Log Viewer: http://localhost:3000/logs"
+echo "📊 Dashboard: http://localhost:3001"
+echo "📋 Log Viewer: http://localhost:3001/logs"
 echo "🔧 Backend API: http://localhost:5000/api"
 echo ""
 echo "Use ./stop.sh to stop all services"
