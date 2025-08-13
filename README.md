@@ -1,7 +1,7 @@
 # Hands On System Design with "Distributed Systems Implementation - 254-Lesson’s curriculum"
 ## Hands-on System Design: From Zero to Production
 
-**[Check here for detailed 254 Lesson course Curriculum](#)**
+**[Check here for detailed 254 Lesson course Curriculum](https://sdcourse.substack.com/p/hands-on-distributed-systems-with)**
 
 ## Why This Course?
 
