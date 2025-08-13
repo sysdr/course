@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Log Search - Distributed Log Processing</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1>🔍 Advanced Log Search</h1>
+            <div class="header-stats">
+                <span id="connection-status">Connecting...</span>
+                <span id="search-stats"></span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="search-container">
+                <div class="search-bar">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Search logs... (e.g., error payment timeout)"
+                        autocomplete="off"
+                    >
+                    <button id="search-btn">🔍 Search</button>
+                    <button id="clear-btn">✨ Clear</button>
+                </div>
+
+                <div class="filters-panel" id="filters-panel">
+                    <h3>🎛️ Filters</h3>
+                    
+                    <div class="filter-group">
+                        <label>Log Level:</label>
+                        <div class="checkbox-group" id="level-filters"></div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Service:</label>
+                        <div class="checkbox-group" id="service-filters"></div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Time Range:</label>
+                        <select id="time-range">
+                            <option value="">All time</option>
+                            <option value="1h">Last hour</option>
+                            <option value="24h">Last 24 hours</option>
+                            <option value="7d">Last 7 days</option>
+                            <option value="custom">Custom range</option>
+                        </select>
+                        <div id="custom-time-range" style="display: none;">
+                            <input type="datetime-local" id="start-time">
+                            <input type="datetime-local" id="end-time">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>User ID:</label>
+                        <input type="text" id="user-id-filter" placeholder="Filter by user ID">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Source IP:</label>
+                        <input type="text" id="source-ip-filter" placeholder="Filter by IP">
+                    </div>
+
+                    <div class="filter-actions">
+                        <button id="apply-filters">Apply Filters</button>
+                        <button id="reset-filters">Reset All</button>
+                        <button id="save-search">💾 Save Search</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div class="results-header">
+                    <div class="results-info" id="results-info">
+                        Ready to search...
+                    </div>
+                    <div class="results-actions">
+                        <select id="sort-by">
+                            <option value="timestamp">Sort by Time</option>
+                            <option value="level">Sort by Level</option>
+                            <option value="service">Sort by Service</option>
+                        </select>
+                        <select id="sort-order">
+                            <option value="desc">Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                        <button id="export-results">📁 Export</button>
+                    </div>
+                </div>
+
+                <div class="results-list" id="results-list">
+                    <div class="welcome-message">
+                        <h3>🚀 Welcome to Advanced Log Search</h3>
+                        <p>Use the search bar above to find log entries. Apply filters to narrow down results.</p>
+                        <ul>
+                            <li>Search for text: <code>error timeout</code></li>
+                            <li>Use filters to narrow results by level, service, time</li>
+                            <li>Results update in real-time as new logs arrive</li>
+                            <li>Export filtered results in multiple formats</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pagination" id="pagination" style="display: none;">
+                    <button id="prev-page">← Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page">Next →</button>
+                </div>
+            </div>
+        </main>
+
+        <div class="search-history" id="search-history">
+            <h4>📚 Recent Searches</h4>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+    <script src="src/main.js"></script>
+</body>
+</html>

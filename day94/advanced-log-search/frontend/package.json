@@ -1,0 +1,10 @@
+{
+  "name": "advanced-log-search-ui",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "python -m http.server 3000 --directory .",
+    "build": "echo 'Using vanilla JS - no build needed'",
+    "test": "echo 'Frontend tests would go here'"
+  },
+  "dependencies": {}
+}

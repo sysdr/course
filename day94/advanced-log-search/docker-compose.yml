@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  log-search:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    environment:
+      - PYTHONPATH=/app/backend
+    restart: unless-stopped
+    
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  log_data:
