@@ -23,7 +23,7 @@ export const DashboardProvider = ({ children }) => {
     
     // Generate unique client ID for WebSocket connection
     const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    const ws = new WebSocket(`ws://localhost:8000/ws/${clientId}`)
+    const ws = new WebSocket(`ws://localhost:3000/ws/${clientId}`)
     
     ws.onopen = () => {
       console.log('WebSocket connected')
