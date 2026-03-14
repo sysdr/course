@@ -1,0 +1,375 @@
+🚀 Day 149: Kubernetes Deployment Definitions Setup
+==================================================
+[0;34m📁 Creating project structure...[0m
+[0;32m✅ Project structure created[0m
+[0;34m📝 Creating Kubernetes manifest files...[0m
+[0;32m✅ Kubernetes manifests created[0m
+[0;34m💻 Creating application source code...[0m
+[0;32m✅ Application source code created[0m
+[0;34m🐳 Creating Docker configurations...[0m
+[0;32m✅ Docker configurations created[0m
+[0;34m🌐 Creating web dashboard...[0m
+[0;32m✅ Web dashboard created[0m
+[0;34m⚙️  Creating Kustomize overlays...[0m
+[0;32m✅ Kustomize overlays created[0m
+[0;34m📜 Creating helper scripts...[0m
+[0;32m✅ Scripts created[0m
+[0;34m🧪 Creating tests...[0m
+[0;32m✅ Tests created[0m
+[0;32m✅ Documentation created[0m
+
+[1;33m========================================[0m
+[1;33mBUILDING AND TESTING[0m
+[1;33m========================================[0m
+
+[0;34mChecking prerequisites...[0m
+[0;32m✅ Prerequisites checked[0m
+
+[0;34m🏗️  Building Docker images...[0m
+🏗️  Building Docker images...
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.storage
+#1 transferring dockerfile: 165B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 124B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 3.06kB done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#5 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#5 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9 0.0s done
+#5 DONE 0.1s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [3/3] COPY src/storage/storage_node.py .
+#7 DONE 0.1s
+
+#8 exporting to image
+#8 exporting layers 0.1s done
+#8 exporting manifest sha256:3e7c5c703bbf7861a2c0190201ea5c6aa899bb19a9d2b9075b5d3ae117619c97 0.0s done
+#8 exporting config sha256:65e17bd4456fcda32ee9919a98e93b28a02eb922064667c7b08d910c9a2923e4 0.0s done
+#8 exporting attestation manifest sha256:3726c63df85172bb2134f22940fb925d2feb5dc9671e441205ca2cb24cb8957b 0.0s done
+#8 exporting manifest list sha256:1a5774f51e7c361f7061be091a47067052541aa0be6fa481674d70690964112d 0.0s done
+#8 naming to docker.io/library/log-processing-storage:latest
+#8 naming to docker.io/library/log-processing-storage:latest 0.0s done
+#8 unpacking to docker.io/library/log-processing-storage:latest 0.1s done
+#8 DONE 0.4s
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.query
+#1 transferring dockerfile: 173B done
+#1 DONE -0.4s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 124B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 3.58kB done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#5 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9 0.0s done
+#5 DONE 0.0s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [3/3] COPY src/query/query_coordinator.py .
+#7 DONE 0.0s
+
+#8 exporting to image
+#8 exporting layers 0.1s done
+#8 exporting manifest sha256:6955172256e0de61dbc720083173b02f554b3f57db9bd735dfa4ddf5527094ff 0.0s done
+#8 exporting config sha256:ec3b01d6a5532e38274e1b8bc3198fbb3d3a873f213b251bebf8825e6440f876 0.0s done
+#8 exporting attestation manifest sha256:d6bdeaf4ff97be28f52c558f40d444f46629f8bdf7832108cd111b8de36ed482 0.0s done
+#8 exporting manifest list sha256:644746926d6d739363a862eeea342519bd678f24d5e1f19219ffd3d31b793540 0.0s done
+#8 naming to docker.io/library/log-processing-query:latest done
+#8 unpacking to docker.io/library/log-processing-query:latest 0.0s done
+#8 DONE -0.5s
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.collector
+#1 transferring dockerfile:
+#1 transferring dockerfile: 158B done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 124B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.57kB done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#5 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9 0.0s done
+#5 DONE 0.0s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [3/3] COPY src/collector/log_collector.py .
+#7 DONE 0.0s
+
+#8 exporting to image
+#8 exporting layers 0.1s done
+#8 exporting manifest sha256:6553e8279e53a7028c94db39f94ad5d9115a8825a3c2e07446f6af61b5ed4905 0.0s done
+#8 exporting config sha256:acb133077dd3e59b0f761ac1a885a0c64cd009f581308f1d945a770317376053 0.0s done
+#8 exporting attestation manifest sha256:bb57d9269249d8c043a6bc2b90ea5891c86a9a406c6d466e73806b4253d26887 0.0s done
+#8 exporting manifest list sha256:9ef0c02b8b0992a1beedcd5bf31a69b61ab87524a3eeacbbde9dfa9a135b29ff 0.0s done
+#8 naming to docker.io/library/log-processing-collector:latest done
+#8 unpacking to docker.io/library/log-processing-collector:latest 0.0s done
+#8 DONE 0.2s
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.dashboard
+#1 transferring dockerfile: 363B done
+#1 WARN: FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/nginx:1.25-alpine
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/node:20-alpine
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 124B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.62kB 0.0s done
+#5 DONE 0.0s
+
+#6 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:1ab6fc5a31d515dc7b6b25f6acfda2001821f2c2400252b6cb61044bd9f9ad48
+#6 resolve docker.io/library/node:20-alpine@sha256:1ab6fc5a31d515dc7b6b25f6acfda2001821f2c2400252b6cb61044bd9f9ad48 0.1s done
+#6 DONE 0.1s
+
+#7 [stage-1 1/3] FROM docker.io/library/nginx:1.25-alpine@sha256:516475cc129da42866742567714ddc681e5eed7b9ee0b9e9c015e464b4221a00
+#7 resolve docker.io/library/nginx:1.25-alpine@sha256:516475cc129da42866742567714ddc681e5eed7b9ee0b9e9c015e464b4221a00 0.1s done
+#7 DONE 0.1s
+
+#8 [builder 2/6] WORKDIR /app
+#8 CACHED
+
+#9 [builder 3/6] COPY web/package.json web/package-lock.json ./
+#9 ERROR: failed to calculate checksum of ref o2h6t1cw82h3135smysk458bf::yi3ev0gwnh4drju7hwkboi5y0: "/web/package-lock.json": not found
+------
+ > [builder 3/6] COPY web/package.json web/package-lock.json ./:
+------
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)
+Dockerfile.dashboard:5
+--------------------
+   3 |     WORKDIR /app
+   4 |     
+   5 | >>> COPY web/package.json web/package-lock.json ./
+   6 |     RUN npm ci
+   7 |     
+--------------------
+ERROR: failed to build: failed to solve: failed to compute cache key: failed to calculate checksum of ref o2h6t1cw82h3135smysk458bf::yi3ev0gwnh4drju7hwkboi5y0: "/web/package-lock.json": not found
+✅ All images built successfully
+
+[0;32m✅ Docker images built successfully[0m
+
+[0;34m🧪 Testing with Docker Compose...[0m
+time="2025-12-30T05:35:17Z" level=warning msg="/home/systemdr/git/course/day149/log-processing-k8s/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.61kB done
+#1 DONE 0.0s
+
+#2 [query internal] load build definition from Dockerfile.query
+#2 DONE 0.0s
+
+#3 [storage internal] load build definition from Dockerfile.storage
+#3 transferring dockerfile: 165B done
+#3 DONE 0.0s
+
+#4 [collector internal] load build definition from Dockerfile.collector
+#4 transferring dockerfile: 158B 0.0s done
+#4 DONE 0.1s
+
+#2 [query internal] load build definition from Dockerfile.query
+#2 transferring dockerfile: 173B done
+#2 DONE 0.1s
+
+#5 [storage internal] load metadata for docker.io/library/python:3.11-slim
+#5 DONE 0.1s
+
+#6 [query internal] load .dockerignore
+#6 transferring context: 124B 0.0s done
+#6 DONE 0.0s
+
+#7 [query internal] load build context
+#7 transferring context: 3.58kB done
+#7 DONE 0.0s
+
+#8 [collector 1/3] FROM docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#8 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9
+#8 resolve docker.io/library/python:3.11-slim@sha256:91e9d01cf4bd56be7128c603506b6fe367ef7506f9f2ad8f3a908aeec8941bb9 0.1s done
+#8 DONE 0.1s
+
+#9 [storage internal] load build context
+#9 transferring context: 3.06kB 0.0s done
+#9 DONE 0.1s
+
+#10 [collector internal] load build context
+#10 transferring context: 1.57kB 0.0s done
+#10 DONE 0.1s
+
+#11 [storage 3/3] COPY src/storage/storage_node.py .
+#11 CACHED
+
+#12 [query 3/3] COPY src/query/query_coordinator.py .
+#12 CACHED
+
+#13 [collector 2/3] WORKDIR /app
+#13 CACHED
+
+#14 [collector 3/3] COPY src/collector/log_collector.py .
+#14 CACHED
+
+#15 [storage] exporting to image
+#15 exporting layers done
+#15 exporting manifest sha256:612f71dc0c107e4fdfdb4fd2e7dd484387dfc35d784f40640e9ff71f2a8ba0c2 0.0s done
+#15 exporting config sha256:2274e984fd8f436e534f6caf2e1ccfc35dbb1c17c122457c6befbd197530be8d 0.0s done
+#15 exporting attestation manifest sha256:8f3e501ca4d55c342a631e1ac7f5b947aade52912fdaa8310237560c2d41afd8 0.1s done
+#15 exporting manifest list sha256:d0017c47dfed4220cbcbec757cf117495f4aa6b10be90149ec128f07edf2b4a3
+#15 ...
+
+#16 [collector] exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:b8588ce0cdc0926b9bd0a9a1f690ed14019739aaea6eee6cf1cd340a98abdc20 0.0s done
+#16 exporting config sha256:f0ec8de81483d4211721f6c1c193bcdb3651b4ae5786fde59fa39b469daf9341 0.0s done
+#16 exporting attestation manifest sha256:ab97c0031682a18ea548f1ef29e7a1cbf4baff5d242dc155c73c2ced41229934 0.1s done
+#16 exporting manifest list sha256:03739f89c3807b2ead8adf645175a3d768d5a5f2aa1ac61674a3517d6e6c4659 0.0s done
+#16 naming to docker.io/library/log-processing-k8s-collector:latest done
+#16 unpacking to docker.io/library/log-processing-k8s-collector:latest 0.0s done
+#16 DONE 0.3s
+
+#15 [storage] exporting to image
+#15 exporting manifest list sha256:d0017c47dfed4220cbcbec757cf117495f4aa6b10be90149ec128f07edf2b4a3 0.0s done
+#15 naming to docker.io/library/log-processing-k8s-storage:latest 0.0s done
+#15 unpacking to docker.io/library/log-processing-k8s-storage:latest 0.0s done
+#15 DONE 0.3s
+
+#17 [query] exporting to image
+#17 exporting layers done
+#17 exporting manifest sha256:fbc8c6b2cd8db1379282f60eb8eb3b0dd3144df3f0479c2d5b4ea8768664de78 0.0s done
+#17 exporting config sha256:1c37f9a9de4410554cc34a9f4eebf2feab03275ff4e9084a54987957e45dfb97 0.0s done
+#17 exporting attestation manifest sha256:d90d8e7c8c693a2b12dc85f95141ada8f336870428530f6bba98817835e78bbc 0.1s done
+#17 exporting manifest list sha256:2ad8cff39eb4f5f30f6e1429db7c2ac626d0d6a4672623521dab588642ee42ef 0.0s done
+#17 naming to docker.io/library/log-processing-k8s-query:latest done
+#17 unpacking to docker.io/library/log-processing-k8s-query:latest 0.0s done
+#17 DONE 0.3s
+
+#18 [collector] resolving provenance for metadata file
+#18 DONE 0.1s
+
+#19 [query] resolving provenance for metadata file
+#19 DONE 0.1s
+
+#20 [storage] resolving provenance for metadata file
+#20 DONE 0.0s
+ log-processing-k8s-collector  Built
+ log-processing-k8s-storage  Built
+ log-processing-k8s-query  Built
+ Network log-processing-k8s_default  Creating
+ Network log-processing-k8s_default  Created
+ Container log-processing-k8s-rabbitmq-1  Creating
+ Container log-processing-k8s-rabbitmq-1  Created
+ Container log-processing-k8s-collector-1  Creating
+ Container log-processing-k8s-storage-1  Creating
+ Container log-processing-k8s-collector-1  Created
+ Container log-processing-k8s-storage-1  Created
+ Container log-processing-k8s-query-1  Creating
+ Container log-processing-k8s-query-1  Created
+ Container log-processing-k8s-rabbitmq-1  Starting
+ Container log-processing-k8s-rabbitmq-1  Started
+ Container log-processing-k8s-storage-1  Starting
+ Container log-processing-k8s-collector-1  Starting
+ Container log-processing-k8s-collector-1  Started
+ Container log-processing-k8s-storage-1  Started
+ Container log-processing-k8s-query-1  Starting
+ Container log-processing-k8s-query-1  Started
+⏳ Waiting for services to start...
+
+[0;34mTesting Query Coordinator...[0m
+{
+    "status": "healthy"
+}
+
+[0;34mTesting Storage Node...[0m
+{
+    "status": "healthy",
+    "node": "storage-node-0"
+}
+
+[0;32m✅ Docker Compose services running[0m
+time="2025-12-30T05:35:36Z" level=warning msg="/home/systemdr/git/course/day149/log-processing-k8s/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+NAME                             IMAGE                          COMMAND                  SERVICE     CREATED          STATUS                    PORTS
+log-processing-k8s-collector-1   log-processing-k8s-collector   "python log_collecto…"   collector   17 seconds ago   Up 16 seconds             
+log-processing-k8s-query-1       log-processing-k8s-query       "python query_coordi…"   query       17 seconds ago   Up 15 seconds             0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+log-processing-k8s-rabbitmq-1    rabbitmq:3.12-management       "docker-entrypoint.s…"   rabbitmq    17 seconds ago   Up 16 seconds (healthy)   0.0.0.0:5672->5672/tcp, [::]:5672->5672/tcp, 0.0.0.0:15672->15672/tcp, [::]:15672->15672/tcp
+log-processing-k8s-storage-1     log-processing-k8s-storage     "python storage_node…"   storage     17 seconds ago   Up 16 seconds             0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+
+[0;34m🚀 Testing Kubernetes deployment with Kind...[0m
+Creating Kind cluster...
+Creating cluster "log-processing" ...
+ • Ensuring node image (kindest/node:v1.27.3) 🖼  ...
+ ✓ Ensuring node image (kindest/node:v1.27.3) 🖼
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+Set kubectl context to "kind-log-processing"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-log-processing
+
+Have a nice day! 👋
+Loading images to Kind...
+Image: "log-processing-storage:latest" with ID "sha256:1a5774f51e7c361f7061be091a47067052541aa0be6fa481674d70690964112d" not yet present on node "log-processing-control-plane", loading...
+Image: "log-processing-query:latest" with ID "sha256:644746926d6d739363a862eeea342519bd678f24d5e1f19219ffd3d31b793540" not yet present on node "log-processing-control-plane", loading...
+Image: "log-processing-collector:latest" with ID "sha256:9ef0c02b8b0992a1beedcd5bf31a69b61ab87524a3eeacbbde9dfa9a135b29ff" not yet present on node "log-processing-control-plane", loading...
+Deploying to Kubernetes...
+🚀 Deploying to Kind cluster...
+namespace/log-processing created
+configmap/app-config created
+secret/app-secrets created
+service/dashboard created
+service/query-coordinator created
+service/rabbitmq created
+service/rabbitmq-headless created
+service/storage-headless created
+deployment.apps/dashboard created
+deployment.apps/log-collector created
+deployment.apps/query-coordinator created
+statefulset.apps/rabbitmq created
+statefulset.apps/storage-node created
+⏳ Waiting for deployments to be ready...

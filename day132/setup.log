@@ -1,0 +1,43 @@
+🚀 Day 132: Implementing Error Tracking Features
+==================================================
+[0;34m📁 Creating Project Structure...[0m
+[0;32m[INFO][0m Project structure created successfully
+[0;34m🐍 Setting up Python Virtual Environment...[0m
+[0;32m[INFO][0m Python virtual environment activated
+[0;34m📦 Installing Python Dependencies...[0m
+Collecting fastapi==0.104.1 (from -r backend/requirements.txt (line 1))
+  Using cached fastapi-0.104.1-py3-none-any.whl.metadata (24 kB)
+Collecting uvicorn==0.24.0 (from uvicorn[standard]==0.24.0->-r backend/requirements.txt (line 2))
+  Using cached uvicorn-0.24.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting sqlalchemy==2.0.23 (from -r backend/requirements.txt (line 3))
+  Downloading SQLAlchemy-2.0.23-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+Collecting alembic==1.12.1 (from -r backend/requirements.txt (line 4))
+  Downloading alembic-1.12.1-py3-none-any.whl.metadata (7.3 kB)
+Collecting psycopg2-binary==2.9.9 (from -r backend/requirements.txt (line 5))
+  Downloading psycopg2_binary-2.9.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.4 kB)
+Collecting redis==5.0.1 (from -r backend/requirements.txt (line 6))
+  Downloading redis-5.0.1-py3-none-any.whl.metadata (8.9 kB)
+Collecting pydantic==2.5.0 (from -r backend/requirements.txt (line 7))
+  Using cached pydantic-2.5.0-py3-none-any.whl.metadata (174 kB)
+Collecting pydantic-settings==2.1.0 (from -r backend/requirements.txt (line 8))
+  Downloading pydantic_settings-2.1.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting python-multipart==0.0.6 (from -r backend/requirements.txt (line 9))
+  Using cached python_multipart-0.0.6-py3-none-any.whl.metadata (2.5 kB)
+Collecting python-jose==3.3.0 (from python-jose[cryptography]==3.3.0->-r backend/requirements.txt (line 10))
+  Downloading python_jose-3.3.0-py2.py3-none-any.whl.metadata (5.4 kB)
+Collecting passlib==1.7.4 (from passlib[bcrypt]==1.7.4->-r backend/requirements.txt (line 11))
+  Downloading passlib-1.7.4-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting aioredis==2.0.1 (from -r backend/requirements.txt (line 12))
+  Using cached aioredis-2.0.1-py3-none-any.whl.metadata (15 kB)
+Collecting asyncpg==0.29.0 (from -r backend/requirements.txt (line 13))
+  Downloading asyncpg-0.29.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.4 kB)
+Collecting pytest==7.4.3 (from -r backend/requirements.txt (line 14))
+  Using cached pytest-7.4.3-py3-none-any.whl.metadata (7.9 kB)
+Collecting pytest-asyncio==0.21.1 (from -r backend/requirements.txt (line 15))
+  Using cached pytest_asyncio-0.21.1-py3-none-any.whl.metadata (4.0 kB)
+Collecting httpx==0.25.2 (from -r backend/requirements.txt (line 16))
+  Downloading httpx-0.25.2-py3-none-any.whl.metadata (6.9 kB)
+Collecting structlog==23.2.0 (from -r backend/requirements.txt (line 17))
+  Using cached structlog-23.2.0-py3-none-any.whl.metadata (7.6 kB)
+ERROR: Could not find a version that satisfies the requirement hashlib-sha3==1.0.0 (from versions: none)
+ERROR: No matching distribution found for hashlib-sha3==1.0.0

@@ -1,0 +1,821 @@
+🚀 Day 138: Setting up JIRA/ServiceNow Ticket Creation System
+============================================================
+📁 Creating project structure...
+🐍 Setting up Python 3.12 virtual environment...
+📦 Creating requirements.txt with latest dependencies...
+⬇️  Installing Python dependencies...
+Requirement already satisfied: pip in ./venv/lib/python3.12/site-packages (24.0)
+Collecting pip
+  Using cached pip-25.3-py3-none-any.whl.metadata (4.7 kB)
+Using cached pip-25.3-py3-none-any.whl (1.8 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 24.0
+    Uninstalling pip-24.0:
+      Successfully uninstalled pip-24.0
+Successfully installed pip-25.3
+Collecting fastapi==0.111.0 (from -r requirements.txt (line 2))
+  Using cached fastapi-0.111.0-py3-none-any.whl.metadata (25 kB)
+Collecting uvicorn==0.30.1 (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached uvicorn-0.30.1-py3-none-any.whl.metadata (6.3 kB)
+Collecting pydantic==2.7.4 (from -r requirements.txt (line 4))
+  Using cached pydantic-2.7.4-py3-none-any.whl.metadata (109 kB)
+Collecting pydantic-settings==2.3.0 (from -r requirements.txt (line 5))
+  Using cached pydantic_settings-2.3.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting httpx==0.27.0 (from -r requirements.txt (line 8))
+  Using cached httpx-0.27.0-py3-none-any.whl.metadata (7.2 kB)
+Collecting aiohttp==3.9.5 (from -r requirements.txt (line 9))
+  Using cached aiohttp-3.9.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.5 kB)
+Collecting requests==2.32.3 (from -r requirements.txt (line 10))
+  Using cached requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+Collecting python-multipart==0.0.9 (from -r requirements.txt (line 13))
+  Using cached python_multipart-0.0.9-py3-none-any.whl.metadata (2.5 kB)
+Collecting python-jose==3.3.0 (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached python_jose-3.3.0-py2.py3-none-any.whl.metadata (5.4 kB)
+Collecting passlib==1.7.4 (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 15))
+  Using cached passlib-1.7.4-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting sqlalchemy==2.0.30 (from -r requirements.txt (line 18))
+  Using cached SQLAlchemy-2.0.30-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+Collecting alembic==1.13.2 (from -r requirements.txt (line 19))
+  Using cached alembic-1.13.2-py3-none-any.whl.metadata (7.4 kB)
+Collecting redis==5.0.5 (from -r requirements.txt (line 20))
+  Using cached redis-5.0.5-py3-none-any.whl.metadata (9.3 kB)
+Collecting asyncpg==0.29.0 (from -r requirements.txt (line 21))
+  Using cached asyncpg-0.29.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.4 kB)
+Collecting celery==5.3.6 (from -r requirements.txt (line 24))
+  Using cached celery-5.3.6-py3-none-any.whl.metadata (21 kB)
+Collecting structlog==24.2.0 (from -r requirements.txt (line 28))
+  Using cached structlog-24.2.0-py3-none-any.whl.metadata (7.9 kB)
+Collecting prometheus-client==0.20.0 (from -r requirements.txt (line 29))
+  Using cached prometheus_client-0.20.0-py3-none-any.whl.metadata (1.8 kB)
+Collecting jinja2==3.1.4 (from -r requirements.txt (line 32))
+  Using cached jinja2-3.1.4-py3-none-any.whl.metadata (2.6 kB)
+Collecting python-dotenv==1.0.1 (from -r requirements.txt (line 33))
+  Using cached python_dotenv-1.0.1-py3-none-any.whl.metadata (23 kB)
+Collecting PyYAML==6.0.1 (from -r requirements.txt (line 34))
+  Using cached PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting pytest==8.2.2 (from -r requirements.txt (line 37))
+  Using cached pytest-8.2.2-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-asyncio==0.23.7 (from -r requirements.txt (line 38))
+  Using cached pytest_asyncio-0.23.7-py3-none-any.whl.metadata (3.9 kB)
+Collecting pytest-httpx==0.30.0 (from -r requirements.txt (line 39))
+  Using cached pytest_httpx-0.30.0-py3-none-any.whl.metadata (27 kB)
+Collecting black==24.4.2 (from -r requirements.txt (line 42))
+  Using cached black-24.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (77 kB)
+Collecting flake8==7.1.0 (from -r requirements.txt (line 43))
+  Downloading flake8-7.1.0-py2.py3-none-any.whl.metadata (3.8 kB)
+Collecting mypy==1.10.0 (from -r requirements.txt (line 44))
+  Using cached mypy-1.10.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.9 kB)
+Collecting starlette<0.38.0,>=0.37.2 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached starlette-0.37.2-py3-none-any.whl.metadata (5.9 kB)
+Collecting typing-extensions>=4.8.0 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting fastapi-cli>=0.0.2 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached fastapi_cli-0.0.16-py3-none-any.whl.metadata (6.4 kB)
+Collecting ujson!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,>=4.0.1 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached ujson-5.11.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (9.4 kB)
+Collecting orjson>=3.2.1 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached orjson-3.11.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (41 kB)
+Collecting email_validator>=2.0.0 (from fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached email_validator-2.3.0-py3-none-any.whl.metadata (26 kB)
+Collecting annotated-types>=0.4.0 (from pydantic==2.7.4->-r requirements.txt (line 4))
+  Using cached annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.18.4 (from pydantic==2.7.4->-r requirements.txt (line 4))
+  Using cached pydantic_core-2.18.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.5 kB)
+Collecting click>=7.0 (from uvicorn==0.30.1->uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting h11>=0.8 (from uvicorn==0.30.1->uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting anyio (from httpx==0.27.0->-r requirements.txt (line 8))
+  Using cached anyio-4.11.0-py3-none-any.whl.metadata (4.1 kB)
+Collecting certifi (from httpx==0.27.0->-r requirements.txt (line 8))
+  Using cached certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx==0.27.0->-r requirements.txt (line 8))
+  Using cached httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting idna (from httpx==0.27.0->-r requirements.txt (line 8))
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting sniffio (from httpx==0.27.0->-r requirements.txt (line 8))
+  Using cached sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting aiosignal>=1.1.2 (from aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting attrs>=17.3.0 (from aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+Collecting multidict<7.0,>=4.5 (from aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached multidict-6.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+Collecting yarl<2.0,>=1.0 (from aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached yarl-1.22.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (75 kB)
+Collecting charset-normalizer<4,>=2 (from requests==2.32.3->-r requirements.txt (line 10))
+  Using cached charset_normalizer-3.4.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+Collecting urllib3<3,>=1.21.1 (from requests==2.32.3->-r requirements.txt (line 10))
+  Using cached urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting ecdsa!=0.15 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached ecdsa-0.19.1-py2.py3-none-any.whl.metadata (29 kB)
+Collecting rsa (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting pyasn1 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Collecting greenlet!=0.4.17 (from sqlalchemy==2.0.30->-r requirements.txt (line 18))
+  Using cached greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+Collecting Mako (from alembic==1.13.2->-r requirements.txt (line 19))
+  Using cached mako-1.3.10-py3-none-any.whl.metadata (2.9 kB)
+Collecting billiard<5.0,>=4.2.0 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached billiard-4.2.3-py3-none-any.whl.metadata (4.8 kB)
+Collecting click-didyoumean>=0.3.0 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached click_didyoumean-0.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting click-plugins>=1.1.1 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached click_plugins-1.1.1.2-py2.py3-none-any.whl.metadata (6.5 kB)
+Collecting click-repl>=0.2.0 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached click_repl-0.3.0-py3-none-any.whl.metadata (3.6 kB)
+Collecting kombu<6.0,>=5.3.4 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached kombu-5.6.0-py3-none-any.whl.metadata (3.5 kB)
+Collecting python-dateutil>=2.8.2 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting tzdata>=2022.7 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting vine<6.0,>=5.1.0 (from celery==5.3.6->-r requirements.txt (line 24))
+  Using cached vine-5.1.0-py3-none-any.whl.metadata (2.7 kB)
+Collecting MarkupSafe>=2.0 (from jinja2==3.1.4->-r requirements.txt (line 32))
+  Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+Collecting iniconfig (from pytest==8.2.2->-r requirements.txt (line 37))
+  Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting packaging (from pytest==8.2.2->-r requirements.txt (line 37))
+  Using cached packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting pluggy<2.0,>=1.5 (from pytest==8.2.2->-r requirements.txt (line 37))
+  Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting mypy-extensions>=0.4.3 (from black==24.4.2->-r requirements.txt (line 42))
+  Using cached mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+Collecting pathspec>=0.9.0 (from black==24.4.2->-r requirements.txt (line 42))
+  Using cached pathspec-0.12.1-py3-none-any.whl.metadata (21 kB)
+Collecting platformdirs>=2 (from black==24.4.2->-r requirements.txt (line 42))
+  Using cached platformdirs-4.5.0-py3-none-any.whl.metadata (12 kB)
+Collecting mccabe<0.8.0,>=0.7.0 (from flake8==7.1.0->-r requirements.txt (line 43))
+  Downloading mccabe-0.7.0-py2.py3-none-any.whl.metadata (5.0 kB)
+Collecting pycodestyle<2.13.0,>=2.12.0 (from flake8==7.1.0->-r requirements.txt (line 43))
+  Downloading pycodestyle-2.12.1-py2.py3-none-any.whl.metadata (4.5 kB)
+Collecting pyflakes<3.3.0,>=3.2.0 (from flake8==7.1.0->-r requirements.txt (line 43))
+  Downloading pyflakes-3.2.0-py2.py3-none-any.whl.metadata (3.5 kB)
+Collecting bcrypt>=3.1.0 (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 15))
+  Using cached bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl.metadata (10 kB)
+Collecting cryptography>=3.4.0 (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached cryptography-46.0.3-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+Collecting httptools>=0.5.0 (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+Collecting watchfiles>=0.13 (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+Collecting websockets>=10.4 (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3))
+  Using cached websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.8 kB)
+Collecting amqp<6.0.0,>=5.1.1 (from kombu<6.0,>=5.3.4->celery==5.3.6->-r requirements.txt (line 24))
+  Using cached amqp-5.3.1-py3-none-any.whl.metadata (8.9 kB)
+Collecting propcache>=0.2.1 (from yarl<2.0,>=1.0->aiohttp==3.9.5->-r requirements.txt (line 9))
+  Using cached propcache-0.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+Collecting prompt-toolkit>=3.0.36 (from click-repl>=0.2.0->celery==5.3.6->-r requirements.txt (line 24))
+  Using cached prompt_toolkit-3.0.52-py3-none-any.whl.metadata (6.4 kB)
+Collecting cffi>=2.0.0 (from cryptography>=3.4.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=3.4.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+Collecting six>=1.9.0 (from ecdsa!=0.15->python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14))
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting dnspython>=2.0.0 (from email_validator>=2.0.0->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached dnspython-2.8.0-py3-none-any.whl.metadata (5.7 kB)
+Collecting typer>=0.15.1 (from fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached typer-0.20.0-py3-none-any.whl.metadata (16 kB)
+Collecting rich-toolkit>=0.14.8 (from fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached rich_toolkit-0.16.0-py3-none-any.whl.metadata (1.0 kB)
+Collecting wcwidth (from prompt-toolkit>=3.0.36->click-repl>=0.2.0->celery==5.3.6->-r requirements.txt (line 24))
+  Using cached wcwidth-0.2.14-py2.py3-none-any.whl.metadata (15 kB)
+Collecting rich>=13.7.1 (from rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached rich-14.2.0-py3-none-any.whl.metadata (18 kB)
+Collecting markdown-it-py>=2.2.0 (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+Collecting pygments<3.0.0,>=2.13.0 (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Collecting shellingham>=1.3.0 (from typer>=0.15.1->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2))
+  Using cached shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+Using cached fastapi-0.111.0-py3-none-any.whl (91 kB)
+Using cached pydantic-2.7.4-py3-none-any.whl (409 kB)
+Using cached uvicorn-0.30.1-py3-none-any.whl (62 kB)
+Using cached pydantic_settings-2.3.0-py3-none-any.whl (21 kB)
+Using cached httpx-0.27.0-py3-none-any.whl (75 kB)
+Using cached aiohttp-3.9.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.3 MB)
+Using cached requests-2.32.3-py3-none-any.whl (64 kB)
+Using cached python_multipart-0.0.9-py3-none-any.whl (22 kB)
+Using cached python_jose-3.3.0-py2.py3-none-any.whl (33 kB)
+Using cached passlib-1.7.4-py2.py3-none-any.whl (525 kB)
+Using cached SQLAlchemy-2.0.30-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+Downloading alembic-1.13.2-py3-none-any.whl (232 kB)
+Downloading redis-5.0.5-py3-none-any.whl (251 kB)
+Using cached asyncpg-0.29.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+Using cached celery-5.3.6-py3-none-any.whl (422 kB)
+Using cached structlog-24.2.0-py3-none-any.whl (65 kB)
+Using cached prometheus_client-0.20.0-py3-none-any.whl (54 kB)
+Using cached jinja2-3.1.4-py3-none-any.whl (133 kB)
+Using cached python_dotenv-1.0.1-py3-none-any.whl (19 kB)
+Using cached PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (724 kB)
+Using cached pytest-8.2.2-py3-none-any.whl (339 kB)
+Using cached pytest_asyncio-0.23.7-py3-none-any.whl (17 kB)
+Downloading pytest_httpx-0.30.0-py3-none-any.whl (15 kB)
+Using cached black-24.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.8 MB)
+Downloading flake8-7.1.0-py2.py3-none-any.whl (57 kB)
+Using cached mypy-1.10.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.6 MB)
+Using cached pydantic_core-2.18.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Using cached billiard-4.2.3-py3-none-any.whl (87 kB)
+Using cached charset_normalizer-3.4.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+Using cached click-8.3.1-py3-none-any.whl (108 kB)
+Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Using cached kombu-5.6.0-py3-none-any.whl (213 kB)
+Using cached vine-5.1.0-py3-none-any.whl (9.6 kB)
+Using cached amqp-5.3.1-py3-none-any.whl (50 kB)
+Downloading mccabe-0.7.0-py2.py3-none-any.whl (7.3 kB)
+Using cached multidict-6.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (256 kB)
+Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+Downloading pycodestyle-2.12.1-py2.py3-none-any.whl (31 kB)
+Downloading pyflakes-3.2.0-py2.py3-none-any.whl (62 kB)
+Using cached starlette-0.37.2-py3-none-any.whl (71 kB)
+Using cached anyio-4.11.0-py3-none-any.whl (109 kB)
+Using cached urllib3-2.5.0-py3-none-any.whl (129 kB)
+Using cached yarl-1.22.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (377 kB)
+Using cached aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Using cached attrs-25.4.0-py3-none-any.whl (67 kB)
+Using cached bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl (278 kB)
+Using cached certifi-2025.11.12-py3-none-any.whl (159 kB)
+Using cached click_didyoumean-0.3.1-py3-none-any.whl (3.6 kB)
+Using cached click_plugins-1.1.1.2-py2.py3-none-any.whl (11 kB)
+Using cached click_repl-0.3.0-py3-none-any.whl (10 kB)
+Using cached cryptography-46.0.3-cp311-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+Using cached cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (219 kB)
+Using cached ecdsa-0.19.1-py2.py3-none-any.whl (150 kB)
+Using cached email_validator-2.3.0-py3-none-any.whl (35 kB)
+Using cached dnspython-2.8.0-py3-none-any.whl (331 kB)
+Using cached fastapi_cli-0.0.16-py3-none-any.whl (12 kB)
+Using cached frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (242 kB)
+Using cached greenlet-3.2.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (607 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (517 kB)
+Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Using cached mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Using cached orjson-3.11.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (136 kB)
+Using cached packaging-25.0-py3-none-any.whl (66 kB)
+Using cached pathspec-0.12.1-py3-none-any.whl (31 kB)
+Using cached platformdirs-4.5.0-py3-none-any.whl (18 kB)
+Using cached prompt_toolkit-3.0.52-py3-none-any.whl (391 kB)
+Using cached propcache-0.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (221 kB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Using cached rich_toolkit-0.16.0-py3-none-any.whl (29 kB)
+Using cached rich-14.2.0-py3-none-any.whl (243 kB)
+Using cached pygments-2.19.2-py3-none-any.whl (1.2 MB)
+Using cached markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Using cached typer-0.20.0-py3-none-any.whl (47 kB)
+Using cached shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Using cached tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+Using cached ujson-5.11.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (57 kB)
+Using cached uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+Using cached watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)
+Using cached websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (182 kB)
+Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Using cached mako-1.3.10-py3-none-any.whl (78 kB)
+Using cached pyasn1-0.6.1-py3-none-any.whl (83 kB)
+Using cached pycparser-2.23-py3-none-any.whl (118 kB)
+Using cached rsa-4.9.1-py3-none-any.whl (34 kB)
+Using cached wcwidth-0.2.14-py2.py3-none-any.whl (37 kB)
+Installing collected packages: passlib, websockets, wcwidth, vine, uvloop, urllib3, ujson, tzdata, typing-extensions, structlog, sniffio, six, shellingham, redis, PyYAML, python-multipart, python-dotenv, pygments, pyflakes, pycparser, pycodestyle, pyasn1, propcache, prometheus-client, pluggy, platformdirs, pathspec, packaging, orjson, mypy-extensions, multidict, mdurl, mccabe, MarkupSafe, iniconfig, idna, httptools, h11, greenlet, frozenlist, dnspython, click, charset-normalizer, certifi, billiard, bcrypt, attrs, asyncpg, annotated-types, yarl, uvicorn, sqlalchemy, rsa, requests, python-dateutil, pytest, pydantic-core, prompt-toolkit, mypy, markdown-it-py, Mako, jinja2, httpcore, flake8, email_validator, ecdsa, click-plugins, click-didyoumean, cffi, black, anyio, amqp, aiosignal, watchfiles, starlette, rich, python-jose, pytest-asyncio, pydantic, kombu, httpx, cryptography, click-repl, alembic, aiohttp, typer, rich-toolkit, pytest-httpx, pydantic-settings, celery, fastapi-cli, fastapi
+
+
+Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 PyYAML-6.0.1 aiohttp-3.9.5 aiosignal-1.4.0 alembic-1.13.2 amqp-5.3.1 annotated-types-0.7.0 anyio-4.11.0 asyncpg-0.29.0 attrs-25.4.0 bcrypt-5.0.0 billiard-4.2.3 black-24.4.2 celery-5.3.6 certifi-2025.11.12 cffi-2.0.0 charset-normalizer-3.4.4 click-8.3.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 cryptography-46.0.3 dnspython-2.8.0 ecdsa-0.19.1 email_validator-2.3.0 fastapi-0.111.0 fastapi-cli-0.0.16 flake8-7.1.0 frozenlist-1.8.0 greenlet-3.2.4 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.27.0 idna-3.11 iniconfig-2.3.0 jinja2-3.1.4 kombu-5.6.0 markdown-it-py-4.0.0 mccabe-0.7.0 mdurl-0.1.2 multidict-6.7.0 mypy-1.10.0 mypy-extensions-1.1.0 orjson-3.11.4 packaging-25.0 passlib-1.7.4 pathspec-0.12.1 platformdirs-4.5.0 pluggy-1.6.0 prometheus-client-0.20.0 prompt-toolkit-3.0.52 propcache-0.4.1 pyasn1-0.6.1 pycodestyle-2.12.1 pycparser-2.23 pydantic-2.7.4 pydantic-core-2.18.4 pydantic-settings-2.3.0 pyflakes-3.2.0 pygments-2.19.2 pytest-8.2.2 pytest-asyncio-0.23.7 pytest-httpx-0.30.0 python-dateutil-2.9.0.post0 python-dotenv-1.0.1 python-jose-3.3.0 python-multipart-0.0.9 redis-5.0.5 requests-2.32.3 rich-14.2.0 rich-toolkit-0.16.0 rsa-4.9.1 shellingham-1.5.4 six-1.17.0 sniffio-1.3.1 sqlalchemy-2.0.30 starlette-0.37.2 structlog-24.2.0 typer-0.20.0 typing-extensions-4.15.0 tzdata-2025.2 ujson-5.11.0 urllib3-2.5.0 uvicorn-0.30.1 uvloop-0.22.1 vine-5.1.0 watchfiles-1.1.1 wcwidth-0.2.14 websockets-15.0.1 yarl-1.22.0
+🏗️  Creating application source files...
+⚙️ Creating configuration files...
+⚛️ Creating React frontend...
+🧪 Creating comprehensive test suite...
+🐳 Creating Docker configuration...
+📜 Creating build and test scripts...
+⚛️ Setting up React frontend...
+📦 Installing npm dependencies...
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
+npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+npm warn deprecated @babel/plugin-proposal-private-methods@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-methods instead.
+npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+npm warn deprecated @babel/plugin-proposal-private-property-in-object@7.21.11: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-property-in-object instead.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated domexception@2.0.1: Use your platform's native DOMException instead
+npm warn deprecated w3c-hr-time@1.0.2: Use your platform's native performance.now() and performance.timeOrigin.
+npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
+npm warn deprecated
+npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
+npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
+npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
+npm warn deprecated svgo@1.3.2: This SVGO version is no longer supported. Upgrade to v2.x.x.
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 1344 packages, and audited 1345 packages in 41s
+
+264 packages are looking for funding
+  run `npm fund` for details
+
+9 vulnerabilities (3 moderate, 6 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+🏗️  Building React app...
+
+> ticket-integration-dashboard@1.0.0 build
+> react-scripts build
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  72.03 kB  build/static/js/main.a0000ae8.js
+  3.4 kB    build/static/css/main.fb1a5cb7.css
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+✅ Frontend build complete!
+📚 Creating documentation...
+🔍 Verifying installation...
+📁 Verifying file structure...
+✅ All core files created successfully
+🐍 Checking Python syntax...
+📦 Testing imports...
+✅ All Python imports successful
+🏗️  Running build process...
+🏗️  Building JIRA/ServiceNow Ticket Integration System
+======================================================
+📦 Installing Python dependencies...
+Requirement already satisfied: pip in ./venv/lib/python3.12/site-packages (25.3)
+Requirement already satisfied: fastapi==0.111.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 2)) (0.111.0)
+Requirement already satisfied: uvicorn==0.30.1 in ./venv/lib/python3.12/site-packages (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (0.30.1)
+Requirement already satisfied: pydantic==2.7.4 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 4)) (2.7.4)
+Requirement already satisfied: pydantic-settings==2.3.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 5)) (2.3.0)
+Requirement already satisfied: httpx==0.27.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 8)) (0.27.0)
+Requirement already satisfied: aiohttp==3.9.5 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 9)) (3.9.5)
+Requirement already satisfied: requests==2.32.3 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 10)) (2.32.3)
+Requirement already satisfied: python-multipart==0.0.9 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 13)) (0.0.9)
+Requirement already satisfied: python-jose==3.3.0 in ./venv/lib/python3.12/site-packages (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (3.3.0)
+Requirement already satisfied: passlib==1.7.4 in ./venv/lib/python3.12/site-packages (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 15)) (1.7.4)
+Requirement already satisfied: sqlalchemy==2.0.30 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 18)) (2.0.30)
+Requirement already satisfied: alembic==1.13.2 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 19)) (1.13.2)
+Requirement already satisfied: redis==5.0.5 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 20)) (5.0.5)
+Requirement already satisfied: asyncpg==0.29.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 21)) (0.29.0)
+Requirement already satisfied: celery==5.3.6 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 24)) (5.3.6)
+Requirement already satisfied: structlog==24.2.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 28)) (24.2.0)
+Requirement already satisfied: prometheus-client==0.20.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 29)) (0.20.0)
+Requirement already satisfied: jinja2==3.1.4 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 32)) (3.1.4)
+Requirement already satisfied: python-dotenv==1.0.1 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 33)) (1.0.1)
+Requirement already satisfied: PyYAML==6.0.1 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 34)) (6.0.1)
+Requirement already satisfied: pytest==8.2.2 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 37)) (8.2.2)
+Requirement already satisfied: pytest-asyncio==0.23.7 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 38)) (0.23.7)
+Requirement already satisfied: pytest-httpx==0.30.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 39)) (0.30.0)
+Requirement already satisfied: black==24.4.2 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 42)) (24.4.2)
+Requirement already satisfied: flake8==7.1.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 43)) (7.1.0)
+Requirement already satisfied: mypy==1.10.0 in ./venv/lib/python3.12/site-packages (from -r requirements.txt (line 44)) (1.10.0)
+Requirement already satisfied: starlette<0.38.0,>=0.37.2 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (0.37.2)
+Requirement already satisfied: typing-extensions>=4.8.0 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (4.15.0)
+Requirement already satisfied: fastapi-cli>=0.0.2 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (0.0.16)
+Requirement already satisfied: ujson!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,>=4.0.1 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (5.11.0)
+Requirement already satisfied: orjson>=3.2.1 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (3.11.4)
+Requirement already satisfied: email_validator>=2.0.0 in ./venv/lib/python3.12/site-packages (from fastapi==0.111.0->-r requirements.txt (line 2)) (2.3.0)
+Requirement already satisfied: annotated-types>=0.4.0 in ./venv/lib/python3.12/site-packages (from pydantic==2.7.4->-r requirements.txt (line 4)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.18.4 in ./venv/lib/python3.12/site-packages (from pydantic==2.7.4->-r requirements.txt (line 4)) (2.18.4)
+Requirement already satisfied: click>=7.0 in ./venv/lib/python3.12/site-packages (from uvicorn==0.30.1->uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (8.3.1)
+Requirement already satisfied: h11>=0.8 in ./venv/lib/python3.12/site-packages (from uvicorn==0.30.1->uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (0.16.0)
+Requirement already satisfied: anyio in ./venv/lib/python3.12/site-packages (from httpx==0.27.0->-r requirements.txt (line 8)) (4.11.0)
+Requirement already satisfied: certifi in ./venv/lib/python3.12/site-packages (from httpx==0.27.0->-r requirements.txt (line 8)) (2025.11.12)
+Requirement already satisfied: httpcore==1.* in ./venv/lib/python3.12/site-packages (from httpx==0.27.0->-r requirements.txt (line 8)) (1.0.9)
+Requirement already satisfied: idna in ./venv/lib/python3.12/site-packages (from httpx==0.27.0->-r requirements.txt (line 8)) (3.11)
+Requirement already satisfied: sniffio in ./venv/lib/python3.12/site-packages (from httpx==0.27.0->-r requirements.txt (line 8)) (1.3.1)
+Requirement already satisfied: aiosignal>=1.1.2 in ./venv/lib/python3.12/site-packages (from aiohttp==3.9.5->-r requirements.txt (line 9)) (1.4.0)
+Requirement already satisfied: attrs>=17.3.0 in ./venv/lib/python3.12/site-packages (from aiohttp==3.9.5->-r requirements.txt (line 9)) (25.4.0)
+Requirement already satisfied: frozenlist>=1.1.1 in ./venv/lib/python3.12/site-packages (from aiohttp==3.9.5->-r requirements.txt (line 9)) (1.8.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in ./venv/lib/python3.12/site-packages (from aiohttp==3.9.5->-r requirements.txt (line 9)) (6.7.0)
+Requirement already satisfied: yarl<2.0,>=1.0 in ./venv/lib/python3.12/site-packages (from aiohttp==3.9.5->-r requirements.txt (line 9)) (1.22.0)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./venv/lib/python3.12/site-packages (from requests==2.32.3->-r requirements.txt (line 10)) (3.4.4)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.12/site-packages (from requests==2.32.3->-r requirements.txt (line 10)) (2.5.0)
+Requirement already satisfied: ecdsa!=0.15 in ./venv/lib/python3.12/site-packages (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (0.19.1)
+Requirement already satisfied: rsa in ./venv/lib/python3.12/site-packages (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (4.9.1)
+Requirement already satisfied: pyasn1 in ./venv/lib/python3.12/site-packages (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (0.6.1)
+Requirement already satisfied: greenlet!=0.4.17 in ./venv/lib/python3.12/site-packages (from sqlalchemy==2.0.30->-r requirements.txt (line 18)) (3.2.4)
+Requirement already satisfied: Mako in ./venv/lib/python3.12/site-packages (from alembic==1.13.2->-r requirements.txt (line 19)) (1.3.10)
+Requirement already satisfied: billiard<5.0,>=4.2.0 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (4.2.3)
+Requirement already satisfied: click-didyoumean>=0.3.0 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (0.3.1)
+Requirement already satisfied: click-plugins>=1.1.1 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (1.1.1.2)
+Requirement already satisfied: click-repl>=0.2.0 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (0.3.0)
+Requirement already satisfied: kombu<6.0,>=5.3.4 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (5.6.0)
+Requirement already satisfied: python-dateutil>=2.8.2 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (2.9.0.post0)
+Requirement already satisfied: tzdata>=2022.7 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (2025.2)
+Requirement already satisfied: vine<6.0,>=5.1.0 in ./venv/lib/python3.12/site-packages (from celery==5.3.6->-r requirements.txt (line 24)) (5.1.0)
+Requirement already satisfied: MarkupSafe>=2.0 in ./venv/lib/python3.12/site-packages (from jinja2==3.1.4->-r requirements.txt (line 32)) (3.0.3)
+Requirement already satisfied: iniconfig in ./venv/lib/python3.12/site-packages (from pytest==8.2.2->-r requirements.txt (line 37)) (2.3.0)
+Requirement already satisfied: packaging in ./venv/lib/python3.12/site-packages (from pytest==8.2.2->-r requirements.txt (line 37)) (25.0)
+Requirement already satisfied: pluggy<2.0,>=1.5 in ./venv/lib/python3.12/site-packages (from pytest==8.2.2->-r requirements.txt (line 37)) (1.6.0)
+Requirement already satisfied: mypy-extensions>=0.4.3 in ./venv/lib/python3.12/site-packages (from black==24.4.2->-r requirements.txt (line 42)) (1.1.0)
+Requirement already satisfied: pathspec>=0.9.0 in ./venv/lib/python3.12/site-packages (from black==24.4.2->-r requirements.txt (line 42)) (0.12.1)
+Requirement already satisfied: platformdirs>=2 in ./venv/lib/python3.12/site-packages (from black==24.4.2->-r requirements.txt (line 42)) (4.5.0)
+Requirement already satisfied: mccabe<0.8.0,>=0.7.0 in ./venv/lib/python3.12/site-packages (from flake8==7.1.0->-r requirements.txt (line 43)) (0.7.0)
+Requirement already satisfied: pycodestyle<2.13.0,>=2.12.0 in ./venv/lib/python3.12/site-packages (from flake8==7.1.0->-r requirements.txt (line 43)) (2.12.1)
+Requirement already satisfied: pyflakes<3.3.0,>=3.2.0 in ./venv/lib/python3.12/site-packages (from flake8==7.1.0->-r requirements.txt (line 43)) (3.2.0)
+Requirement already satisfied: bcrypt>=3.1.0 in ./venv/lib/python3.12/site-packages (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 15)) (5.0.0)
+Requirement already satisfied: cryptography>=3.4.0 in ./venv/lib/python3.12/site-packages (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (46.0.3)
+Requirement already satisfied: httptools>=0.5.0 in ./venv/lib/python3.12/site-packages (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (0.7.1)
+Requirement already satisfied: uvloop!=0.15.0,!=0.15.1,>=0.14.0 in ./venv/lib/python3.12/site-packages (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (0.22.1)
+Requirement already satisfied: watchfiles>=0.13 in ./venv/lib/python3.12/site-packages (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (1.1.1)
+Requirement already satisfied: websockets>=10.4 in ./venv/lib/python3.12/site-packages (from uvicorn[standard]==0.30.1->-r requirements.txt (line 3)) (15.0.1)
+Requirement already satisfied: amqp<6.0.0,>=5.1.1 in ./venv/lib/python3.12/site-packages (from kombu<6.0,>=5.3.4->celery==5.3.6->-r requirements.txt (line 24)) (5.3.1)
+Requirement already satisfied: propcache>=0.2.1 in ./venv/lib/python3.12/site-packages (from yarl<2.0,>=1.0->aiohttp==3.9.5->-r requirements.txt (line 9)) (0.4.1)
+Requirement already satisfied: prompt-toolkit>=3.0.36 in ./venv/lib/python3.12/site-packages (from click-repl>=0.2.0->celery==5.3.6->-r requirements.txt (line 24)) (3.0.52)
+Requirement already satisfied: cffi>=2.0.0 in ./venv/lib/python3.12/site-packages (from cryptography>=3.4.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (2.0.0)
+Requirement already satisfied: pycparser in ./venv/lib/python3.12/site-packages (from cffi>=2.0.0->cryptography>=3.4.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (2.23)
+Requirement already satisfied: six>=1.9.0 in ./venv/lib/python3.12/site-packages (from ecdsa!=0.15->python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 14)) (1.17.0)
+Requirement already satisfied: dnspython>=2.0.0 in ./venv/lib/python3.12/site-packages (from email_validator>=2.0.0->fastapi==0.111.0->-r requirements.txt (line 2)) (2.8.0)
+Requirement already satisfied: typer>=0.15.1 in ./venv/lib/python3.12/site-packages (from fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (0.20.0)
+Requirement already satisfied: rich-toolkit>=0.14.8 in ./venv/lib/python3.12/site-packages (from fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (0.16.0)
+Requirement already satisfied: wcwidth in ./venv/lib/python3.12/site-packages (from prompt-toolkit>=3.0.36->click-repl>=0.2.0->celery==5.3.6->-r requirements.txt (line 24)) (0.2.14)
+Requirement already satisfied: rich>=13.7.1 in ./venv/lib/python3.12/site-packages (from rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (14.2.0)
+Requirement already satisfied: markdown-it-py>=2.2.0 in ./venv/lib/python3.12/site-packages (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (4.0.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in ./venv/lib/python3.12/site-packages (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (2.19.2)
+Requirement already satisfied: mdurl~=0.1 in ./venv/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (0.1.2)
+Requirement already satisfied: shellingham>=1.3.0 in ./venv/lib/python3.12/site-packages (from typer>=0.15.1->fastapi-cli>=0.0.2->fastapi==0.111.0->-r requirements.txt (line 2)) (1.5.4)
+🔍 Running code quality checks...
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/models/log_event.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/models/ticket.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/api/tickets.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/tests/integration/test_api_endpoints.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/utils/config.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/tests/unit/test_event_processor.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/api/dashboard.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/main.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/tests/unit/test_ticket_service.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/services/ticket_service.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/api/events.py
+would reformat /home/systemdr/git/course/day138/log-ticket-integration/src/services/event_processor.py
+
+Oh no! 💥 💔 💥
+12 files would be reformatted, 5 files would be left unchanged.
+src/api/dashboard.py:4:1: F401 'typing.List' imported but unused
+src/api/dashboard.py:5:1: F401 'json' imported but unused
+src/api/dashboard.py:9:1: F401 'services.event_processor.EventProcessor' imported but unused
+src/api/dashboard.py:10:1: F401 'services.ticket_service.TicketService' imported but unused
+src/api/dashboard.py:16:1: E302 expected 2 blank lines, found 1
+src/api/dashboard.py:19:1: E302 expected 2 blank lines, found 1
+src/api/dashboard.py:23:1: E302 expected 2 blank lines, found 1
+src/api/dashboard.py:28:1: W293 blank line contains whitespace
+src/api/dashboard.py:30:1: W293 blank line contains whitespace
+src/api/dashboard.py:34:1: W293 blank line contains whitespace
+src/api/dashboard.py:38:1: W293 blank line contains whitespace
+src/api/dashboard.py:45:1: W293 blank line contains whitespace
+src/api/dashboard.py:48:89: E501 line too long (113 > 88 characters)
+src/api/dashboard.py:49:89: E501 line too long (121 > 88 characters)
+src/api/dashboard.py:50:89: E501 line too long (116 > 88 characters)
+src/api/dashboard.py:52:1: W293 blank line contains whitespace
+src/api/dashboard.py:74:1: E302 expected 2 blank lines, found 1
+src/api/dashboard.py:77:1: W293 blank line contains whitespace
+src/api/dashboard.py:79:1: W293 blank line contains whitespace
+src/api/dashboard.py:81:89: E501 line too long (93 > 88 characters)
+src/api/dashboard.py:82:89: E501 line too long (91 > 88 characters)
+src/api/dashboard.py:85:1: W293 blank line contains whitespace
+src/api/dashboard.py:88:1: E302 expected 2 blank lines, found 1
+src/api/dashboard.py:91:1: W293 blank line contains whitespace
+src/api/dashboard.py:93:1: W293 blank line contains whitespace
+src/api/dashboard.py:96:89: E501 line too long (93 > 88 characters)
+src/api/dashboard.py:97:89: E501 line too long (90 > 88 characters)
+src/api/dashboard.py:100:89: E501 line too long (93 > 88 characters)
+src/api/dashboard.py:109:1: W293 blank line contains whitespace
+src/api/events.py:4:1: F401 'typing.List' imported but unused
+src/api/events.py:5:1: F401 'json' imported but unused
+src/api/events.py:19:1: E302 expected 2 blank lines, found 1
+src/api/events.py:25:1: E302 expected 2 blank lines, found 1
+src/api/events.py:31:1: E302 expected 2 blank lines, found 1
+src/api/events.py:38:1: W293 blank line contains whitespace
+src/api/events.py:42:1: W293 blank line contains whitespace
+src/api/events.py:43:51: W291 trailing whitespace
+src/api/events.py:44:20: E128 continuation line under-indented for visual indent
+src/api/events.py:44:38: W291 trailing whitespace
+src/api/events.py:45:20: E128 continuation line under-indented for visual indent
+src/api/events.py:46:20: E128 continuation line under-indented for visual indent
+src/api/events.py:47:1: W293 blank line contains whitespace
+src/api/events.py:53:1: W293 blank line contains whitespace
+src/api/events.py:58:1: E302 expected 2 blank lines, found 1
+src/api/events.py:64:1: W293 blank line contains whitespace
+src/api/events.py:71:1: W293 blank line contains whitespace
+src/api/events.py:72:42: W291 trailing whitespace
+src/api/events.py:73:20: E128 continuation line under-indented for visual indent
+src/api/events.py:74:20: E128 continuation line under-indented for visual indent
+src/api/events.py:75:1: W293 blank line contains whitespace
+src/api/events.py:82:1: W293 blank line contains whitespace
+src/api/events.py:84:52: W291 trailing whitespace
+src/api/events.py:85:21: E128 continuation line under-indented for visual indent
+src/api/events.py:85:45: W291 trailing whitespace
+src/api/events.py:86:21: E128 continuation line under-indented for visual indent
+src/api/events.py:89:1: E302 expected 2 blank lines, found 1
+src/api/events.py:94:1: W293 blank line contains whitespace
+src/api/events.py:98:1: W293 blank line contains whitespace
+src/api/events.py:104:1: W293 blank line contains whitespace
+src/api/events.py:109:1: E302 expected 2 blank lines, found 1
+src/api/events.py:115:1: W293 blank line contains whitespace
+src/api/events.py:119:1: W293 blank line contains whitespace
+src/api/events.py:123:1: W293 blank line contains whitespace
+src/api/events.py:131:1: W293 blank line contains whitespace
+src/api/events.py:137:1: W293 blank line contains whitespace
+src/api/events.py:141:1: W293 blank line contains whitespace
+src/api/events.py:145:44: E231 missing whitespace after ','
+src/api/events.py:150:53: E231 missing whitespace after ','
+src/api/events.py:154:1: W293 blank line contains whitespace
+src/api/events.py:170:1: W293 blank line contains whitespace
+src/api/events.py:177:89: E501 line too long (97 > 88 characters)
+src/api/events.py:179:1: W293 blank line contains whitespace
+src/api/events.py:181:1: W293 blank line contains whitespace
+src/api/tickets.py:4:1: F401 'typing.List' imported but unused
+src/api/tickets.py:4:1: F401 'typing.Optional' imported but unused
+src/api/tickets.py:14:1: E302 expected 2 blank lines, found 1
+src/api/tickets.py:20:1: E302 expected 2 blank lines, found 1
+src/api/tickets.py:26:1: W293 blank line contains whitespace
+src/api/tickets.py:28:1: W293 blank line contains whitespace
+src/api/tickets.py:31:1: W293 blank line contains whitespace
+src/api/tickets.py:37:89: E501 line too long (90 > 88 characters)
+src/api/tickets.py:38:1: W293 blank line contains whitespace
+src/api/tickets.py:45:1: E302 expected 2 blank lines, found 1
+src/api/tickets.py:52:1: W293 blank line contains whitespace
+src/api/tickets.py:58:1: W293 blank line contains whitespace
+src/api/tickets.py:61:1: W293 blank line contains whitespace
+src/api/tickets.py:64:1: E302 expected 2 blank lines, found 1
+src/api/tickets.py:69:1: W293 blank line contains whitespace
+src/api/tickets.py:73:1: E302 expected 2 blank lines, found 1
+src/api/tickets.py:76:1: W293 blank line contains whitespace
+src/api/tickets.py:100:21: W291 trailing whitespace
+src/api/tickets.py:112:1: W293 blank line contains whitespace
+src/main.py:7:1: F401 'asyncio' imported but unused
+src/main.py:8:1: F401 'logging' imported but unused
+src/main.py:10:1: F401 'fastapi.BackgroundTasks' imported but unused
+src/main.py:21:1: F401 'utils.config.settings' imported but unused
+src/main.py:47:1: E302 expected 2 blank lines, found 1
+src/main.py:51:1: W293 blank line contains whitespace
+src/main.py:53:1: W293 blank line contains whitespace
+src/main.py:57:1: W293 blank line contains whitespace
+src/main.py:60:1: W293 blank line contains whitespace
+src/main.py:62:1: W293 blank line contains whitespace
+src/main.py:64:1: W293 blank line contains whitespace
+src/main.py:95:1: E302 expected 2 blank lines, found 1
+src/main.py:105:42: W291 trailing whitespace
+src/main.py:112:1: E302 expected 2 blank lines, found 1
+src/models/log_event.py:7:1: E302 expected 2 blank lines, found 1
+src/models/log_event.py:9:1: W293 blank line contains whitespace
+src/models/log_event.py:16:1: W293 blank line contains whitespace
+src/models/log_event.py:21:1: W293 blank line contains whitespace
+src/models/log_event.py:25:1: W293 blank line contains whitespace
+src/models/log_event.py:27:89: E501 line too long (93 > 88 characters)
+src/models/log_event.py:28:1: W293 blank line contains whitespace
+src/models/log_event.py:34:1: E302 expected 2 blank lines, found 1
+src/models/log_event.py:36:1: W293 blank line contains whitespace
+src/models/ticket.py:7:1: E302 expected 2 blank lines, found 1
+src/models/ticket.py:9:1: W293 blank line contains whitespace
+src/models/ticket.py:11:70: W291 trailing whitespace
+src/models/ticket.py:14:1: W293 blank line contains whitespace
+src/models/ticket.py:18:1: W293 blank line contains whitespace
+src/models/ticket.py:21:89: E501 line too long (93 > 88 characters)
+src/models/ticket.py:22:1: W293 blank line contains whitespace
+src/models/ticket.py:27:1: E302 expected 2 blank lines, found 1
+src/models/ticket.py:29:1: W293 blank line contains whitespace
+src/models/ticket.py:34:1: W293 blank line contains whitespace
+src/models/ticket.py:35:1: E302 expected 2 blank lines, found 1
+src/models/ticket.py:37:1: W293 blank line contains whitespace
+src/models/ticket.py:45:1: E302 expected 2 blank lines, found 1
+src/models/ticket.py:47:1: W293 blank line contains whitespace
+src/models/ticket.py:49:26: W291 trailing whitespace
+src/services/event_processor.py:6:1: F401 'datetime.datetime' imported but unused
+src/services/event_processor.py:6:1: F401 'datetime.timedelta' imported but unused
+src/services/event_processor.py:7:1: F401 'typing.Dict' imported but unused
+src/services/event_processor.py:7:1: F401 'typing.Set' imported but unused
+src/services/event_processor.py:12:1: F401 'models.ticket.TicketRequest' imported but unused
+src/services/event_processor.py:18:1: E302 expected 2 blank lines, found 1
+src/services/event_processor.py:20:1: W293 blank line contains whitespace
+src/services/event_processor.py:28:1: W293 blank line contains whitespace
+src/services/event_processor.py:35:1: W293 blank line contains whitespace
+src/services/event_processor.py:48:1: W293 blank line contains whitespace
+src/services/event_processor.py:52:1: W293 blank line contains whitespace
+src/services/event_processor.py:58:1: W293 blank line contains whitespace
+src/services/event_processor.py:61:1: W293 blank line contains whitespace
+src/services/event_processor.py:64:1: W293 blank line contains whitespace
+src/services/event_processor.py:70:1: W293 blank line contains whitespace
+src/services/event_processor.py:74:1: W293 blank line contains whitespace
+src/services/event_processor.py:79:1: W293 blank line contains whitespace
+src/services/event_processor.py:81:1: W293 blank line contains whitespace
+src/services/event_processor.py:85:1: W293 blank line contains whitespace
+src/services/event_processor.py:92:1: W293 blank line contains whitespace
+src/services/event_processor.py:96:1: W293 blank line contains whitespace
+src/services/event_processor.py:97:89: E501 line too long (94 > 88 characters)
+src/services/event_processor.py:99:1: W293 blank line contains whitespace
+src/services/event_processor.py:100:51: W291 trailing whitespace
+src/services/event_processor.py:101:31: E128 continuation line under-indented for visual indent
+src/services/event_processor.py:101:50: W291 trailing whitespace
+src/services/event_processor.py:102:31: E128 continuation line under-indented for visual indent
+src/services/event_processor.py:103:31: E128 continuation line under-indented for visual indent
+src/services/event_processor.py:104:1: W293 blank line contains whitespace
+src/services/event_processor.py:106:1: W293 blank line contains whitespace
+src/services/event_processor.py:110:1: W293 blank line contains whitespace
+src/services/event_processor.py:113:1: W293 blank line contains whitespace
+src/services/event_processor.py:116:1: W293 blank line contains whitespace
+src/services/event_processor.py:120:1: W293 blank line contains whitespace
+src/services/event_processor.py:122:89: E501 line too long (114 > 88 characters)
+src/services/event_processor.py:124:1: W293 blank line contains whitespace
+src/services/event_processor.py:129:1: W293 blank line contains whitespace
+src/services/event_processor.py:133:1: W293 blank line contains whitespace
+src/services/event_processor.py:141:1: W293 blank line contains whitespace
+src/services/event_processor.py:146:1: W293 blank line contains whitespace
+src/services/event_processor.py:154:1: W293 blank line contains whitespace
+src/services/event_processor.py:157:1: W293 blank line contains whitespace
+src/services/event_processor.py:163:1: W293 blank line contains whitespace
+src/services/event_processor.py:168:1: W293 blank line contains whitespace
+src/services/event_processor.py:172:1: W293 blank line contains whitespace
+src/services/event_processor.py:174:89: E501 line too long (92 > 88 characters)
+src/services/event_processor.py:175:89: E501 line too long (116 > 88 characters)
+src/services/event_processor.py:178:1: W293 blank line contains whitespace
+src/services/event_processor.py:180:1: W293 blank line contains whitespace
+src/services/event_processor.py:185:33: W291 trailing whitespace
+src/services/event_processor.py:192:1: W293 blank line contains whitespace
+src/services/event_processor.py:194:1: W293 blank line contains whitespace
+src/services/event_processor.py:208:1: W293 blank line contains whitespace
+src/services/event_processor.py:211:1: E302 expected 2 blank lines, found 1
+src/services/event_processor.py:213:77: W291 trailing whitespace
+src/services/ticket_service.py:3:1: F401 'asyncio' imported but unused
+src/services/ticket_service.py:5:1: F401 'typing.List' imported but unused
+src/services/ticket_service.py:10:1: F401 'models.ticket.TicketResponse' imported but unused
+src/services/ticket_service.py:15:1: E302 expected 2 blank lines, found 1
+src/services/ticket_service.py:17:1: W293 blank line contains whitespace
+src/services/ticket_service.py:23:1: W293 blank line contains whitespace
+src/services/ticket_service.py:27:1: W293 blank line contains whitespace
+src/services/ticket_service.py:36:1: W293 blank line contains whitespace
+src/services/ticket_service.py:37:44: W291 trailing whitespace
+src/services/ticket_service.py:45:1: W293 blank line contains whitespace
+src/services/ticket_service.py:48:1: W293 blank line contains whitespace
+src/services/ticket_service.py:56:1: W293 blank line contains whitespace
+src/services/ticket_service.py:60:1: W293 blank line contains whitespace
+src/services/ticket_service.py:71:1: W293 blank line contains whitespace
+src/services/ticket_service.py:73:89: E501 line too long (95 > 88 characters)
+src/services/ticket_service.py:75:1: W293 blank line contains whitespace
+src/services/ticket_service.py:78:1: W293 blank line contains whitespace
+src/services/ticket_service.py:99:89: E501 line too long (101 > 88 characters)
+src/services/ticket_service.py:102:1: W293 blank line contains whitespace
+src/services/ticket_service.py:104:1: W293 blank line contains whitespace
+src/services/ticket_service.py:111:89: E501 line too long (95 > 88 characters)
+src/services/ticket_service.py:113:1: W293 blank line contains whitespace
+src/services/ticket_service.py:114:89: E501 line too long (94 > 88 characters)
+src/services/ticket_service.py:116:1: W293 blank line contains whitespace
+src/services/ticket_service.py:129:1: W293 blank line contains whitespace
+src/services/ticket_service.py:131:59: W291 trailing whitespace
+src/services/ticket_service.py:134:1: W293 blank line contains whitespace
+src/services/ticket_service.py:141:89: E501 line too long (101 > 88 characters)
+src/services/ticket_service.py:143:1: W293 blank line contains whitespace
+src/services/ticket_service.py:144:89: E501 line too long (90 > 88 characters)
+src/services/ticket_service.py:154:1: W293 blank line contains whitespace
+src/services/ticket_service.py:158:1: W293 blank line contains whitespace
+src/services/ticket_service.py:161:1: W293 blank line contains whitespace
+src/services/ticket_service.py:169:45: W291 trailing whitespace
+src/services/ticket_service.py:171:89: E501 line too long (112 > 88 characters)
+src/services/ticket_service.py:177:1: W293 blank line contains whitespace
+src/services/ticket_service.py:182:1: W293 blank line contains whitespace
+src/services/ticket_service.py:184:1: W293 blank line contains whitespace
+src/services/ticket_service.py:193:1: W293 blank line contains whitespace
+src/utils/config.py:4:1: F401 'typing.List' imported but unused
+src/utils/config.py:4:1: F401 'typing.Optional' imported but unused
+src/utils/config.py:6:1: E302 expected 2 blank lines, found 1
+src/utils/config.py:8:1: W293 blank line contains whitespace
+src/utils/config.py:13:1: W293 blank line contains whitespace
+src/utils/config.py:19:1: W293 blank line contains whitespace
+src/utils/config.py:25:1: W293 blank line contains whitespace
+src/utils/config.py:28:1: W293 blank line contains whitespace
+src/utils/config.py:33:1: W293 blank line contains whitespace
+src/utils/config.py:37:44: W291 trailing whitespace
+src/utils/config.py:41:1: W293 blank line contains whitespace
+src/utils/config.py:45:23: W291 trailing whitespace
+src/utils/config.py:54:1: E305 expected 2 blank lines after class or function definition, found 1
+tests/integration/test_api_endpoints.py:3:1: F401 'json' imported but unused
+tests/integration/test_api_endpoints.py:6:1: E302 expected 2 blank lines, found 1
+tests/integration/test_api_endpoints.py:11:1: E302 expected 2 blank lines, found 1
+tests/integration/test_api_endpoints.py:19:1: E302 expected 2 blank lines, found 1
+tests/integration/test_api_endpoints.py:26:1: E302 expected 2 blank lines, found 1
+tests/integration/test_api_endpoints.py:33:39: W291 trailing whitespace
+tests/integration/test_api_endpoints.py:37:1: W293 blank line contains whitespace
+tests/integration/test_api_endpoints.py:44:1: E302 expected 2 blank lines, found 1
+tests/integration/test_api_endpoints.py:53:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:7:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:13:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:19:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:31:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:35:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:39:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:43:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:47:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:51:24: W291 trailing whitespace
+tests/unit/test_event_processor.py:59:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:63:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:67:1: E302 expected 2 blank lines, found 1
+tests/unit/test_event_processor.py:72:23: W291 trailing whitespace
+tests/unit/test_event_processor.py:78:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:83:23: W291 trailing whitespace
+tests/unit/test_event_processor.py:88:1: W293 blank line contains whitespace
+tests/unit/test_event_processor.py:91:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:2:1: F401 'httpx' imported but unused
+tests/unit/test_ticket_service.py:7:1: E302 expected 2 blank lines, found 1
+tests/unit/test_ticket_service.py:15:1: E302 expected 2 blank lines, found 1
+tests/unit/test_ticket_service.py:22:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:24:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:35:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:40:1: E302 expected 2 blank lines, found 1
+tests/unit/test_ticket_service.py:40:21: W291 trailing whitespace
+tests/unit/test_ticket_service.py:46:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:48:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:53:22: W291 trailing whitespace
+tests/unit/test_ticket_service.py:59:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:64:1: E302 expected 2 blank lines, found 1
+tests/unit/test_ticket_service.py:70:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:72:1: W293 blank line contains whitespace
+tests/unit/test_ticket_service.py:78:25: W291 trailing whitespace
+tests/unit/test_ticket_service.py:83:1: W293 blank line contains whitespace
+🏷️  Running type checks...
+src/services/event_processor.py:68: error: "EventProcessor" has no attribute "_update_existing_ticket"; maybe "_check_existing_ticket"?  [attr-defined]
+src/services/event_processor.py:72: error: "EventProcessor" has no attribute "_create_ticket_request"; maybe "created_tickets"?  [attr-defined]
+src/services/event_processor.py:126: error: "EventProcessor" has no attribute "_get_recent_event_count"  [attr-defined]
+src/services/event_processor.py:139: error: "EventProcessor" has no attribute "_categorize_event"  [attr-defined]
+src/services/event_processor.py:161: error: "None" has no attribute "get"  [attr-defined]
+src/services/event_processor.py:167: error: "None" has no attribute "setex"  [attr-defined]
+src/services/event_processor.py:199: error: "None" has no attribute "lpop"  [attr-defined]
+src/services/ticket_service.py:150: error: "TicketService" has no attribute "_update_servicenow_ticket"; maybe "_create_servicenow_ticket"?  [attr-defined]
+src/api/events.py:41: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:51: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:80: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:96: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:97: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:172: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/events.py:185: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/dashboard.py:32: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+src/api/dashboard.py:33: error: Incompatible types in "await" (actual type "Awaitable[int] | int", expected type "Awaitable[Any]")  [misc]
+Found 17 errors in 4 files (checked 14 source files)
+🧪 Running unit tests...
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.2.2, pluggy-1.6.0 -- /home/systemdr/git/course/day138/log-ticket-integration/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/systemdr/git/course/day138/log-ticket-integration
+configfile: pytest.ini
+plugins: anyio-4.11.0, httpx-0.30.0, asyncio-0.23.7
+asyncio: mode=Mode.STRICT
+collecting ... collected 0 items / 2 errors
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/unit/test_event_processor.py ______________
+ImportError while importing test module '/home/systemdr/git/course/day138/log-ticket-integration/tests/unit/test_event_processor.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/unit/test_event_processor.py:4: in <module>
+    from services.event_processor import EventProcessor
+E   ModuleNotFoundError: No module named 'services'
+______________ ERROR collecting tests/unit/test_ticket_service.py ______________
+ImportError while importing test module '/home/systemdr/git/course/day138/log-ticket-integration/tests/unit/test_ticket_service.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/unit/test_ticket_service.py:4: in <module>
+    from services.ticket_service import TicketService
+E   ModuleNotFoundError: No module named 'services'
+=========================== short test summary info ============================
+ERROR tests/unit/test_event_processor.py
+ERROR tests/unit/test_ticket_service.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 2 errors in 0.12s ===============================

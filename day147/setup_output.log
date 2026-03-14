@@ -1,0 +1,125 @@
+🚀 Day 147: Business Intelligence Tool Integration Setup
+==================================================
+[0;32m📁 Creating project structure...[0m
+[0;32m🐍 Setting up Python 3.11 virtual environment...[0m
+[0;32m📦 Creating requirements.txt...[0m
+[0;32m📥 Installing Python dependencies...[0m
+[0;32m✅ Dependencies installed successfully[0m
+[0;32m⚙️  Creating configuration files...[0m
+[0;32m📊 Creating data models...[0m
+[0;32m🔐 Creating authentication module...[0m
+[0;32m🔍 Creating query builder...[0m
+[0;32m📤 Creating export generator...[0m
+[0;32m🌐 Creating API endpoints...[0m
+[0;32m🚀 Creating main application...[0m
+[0;32m🧪 Creating test suite...[0m
+[0;32m🐳 Creating Docker configuration...[0m
+[0;32m📜 Creating build script...[0m
+[0;32m🔨 Running build...[0m
+🔨 Building BI Integration System...
+✓ Checking Python syntax...
+🧪 Running tests...
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.1.0, pluggy-1.6.0 -- /home/systemdr/git/course/day147/day147-bi-integration/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/systemdr/git/course/day147/day147-bi-integration
+plugins: cov-4.1.0, asyncio-0.23.6, anyio-4.11.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 4 items / 2 errors
+
+==================================== ERRORS ====================================
+________________ ERROR collecting tests/integration/test_api.py ________________
+tests/integration/test_api.py:3: in <module>
+    from src.main import app
+src/main.py:5: in <module>
+    from src.api import routes, oauth_routes
+src/api/routes.py:5: in <module>
+    from src.auth.oauth import get_current_user, check_permission, filter_by_allowed_services, TokenData
+src/auth/oauth.py:17: in <module>
+    "hashed_password": pwd_context.hash("tableau_secret"),
+venv/lib/python3.12/site-packages/passlib/context.py:2258: in hash
+    return record.hash(secret, **kwds)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:779: in hash
+    self.checksum = self._calc_checksum(secret)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:591: in _calc_checksum
+    self._stub_requires_backend()
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2254: in _stub_requires_backend
+    cls.set_backend()
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2156: in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2163: in set_backend
+    return cls.set_backend(name, dryrun=dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2188: in set_backend
+    cls._set_backend(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2311: in _set_backend
+    super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2224: in _set_backend
+    ok = loader(**kwds)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:626: in _load_backend_mixin
+    return mixin_cls._finalize_backend_mixin(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:421: in _finalize_backend_mixin
+    if detect_wrap_bug(IDENT_2A):
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:380: in detect_wrap_bug
+    if verify(secret, bug_hash):
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:792: in verify
+    return consteq(self._calc_checksum(secret), chk)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:655: in _calc_checksum
+    hash = _bcrypt.hashpw(secret, config)
+E   ValueError: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+___________________ ERROR collecting tests/unit/test_auth.py ___________________
+tests/unit/test_auth.py:2: in <module>
+    from src.auth.oauth import verify_password, create_access_token, authenticate_user
+src/auth/oauth.py:17: in <module>
+    "hashed_password": pwd_context.hash("tableau_secret"),
+venv/lib/python3.12/site-packages/passlib/context.py:2258: in hash
+    return record.hash(secret, **kwds)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:779: in hash
+    self.checksum = self._calc_checksum(secret)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:591: in _calc_checksum
+    self._stub_requires_backend()
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2254: in _stub_requires_backend
+    cls.set_backend()
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2156: in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2163: in set_backend
+    return cls.set_backend(name, dryrun=dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2188: in set_backend
+    cls._set_backend(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2311: in _set_backend
+    super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:2224: in _set_backend
+    ok = loader(**kwds)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:626: in _load_backend_mixin
+    return mixin_cls._finalize_backend_mixin(name, dryrun)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:421: in _finalize_backend_mixin
+    if detect_wrap_bug(IDENT_2A):
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:380: in detect_wrap_bug
+    if verify(secret, bug_hash):
+venv/lib/python3.12/site-packages/passlib/utils/handlers.py:792: in verify
+    return consteq(self._calc_checksum(secret), chk)
+venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py:655: in _calc_checksum
+    hash = _bcrypt.hashpw(secret, config)
+E   ValueError: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/pydantic/_internal/_fields.py:186
+  /home/systemdr/git/course/day147/day147-bi-integration/venv/lib/python3.12/site-packages/pydantic/_internal/_fields.py:186: UserWarning: Field name "schema" shadows an attribute in parent "BaseModel"; 
+    warnings.warn(
+
+venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /home/systemdr/git/course/day147/day147-bi-integration/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:272
+  /home/systemdr/git/course/day147/day147-bi-integration/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:272: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.6/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+venv/lib/python3.12/site-packages/influxdb_client/client/write/point.py:13
+  /home/systemdr/git/course/day147/day147-bi-integration/venv/lib/python3.12/site-packages/influxdb_client/client/write/point.py:13: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+    EPOCH = datetime.utcfromtimestamp(0).replace(tzinfo=timezone.utc)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/integration/test_api.py - ValueError: password cannot be longer t...
+ERROR tests/unit/test_auth.py - ValueError: password cannot be longer than 72...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+======================== 4 warnings, 2 errors in 1.33s =========================
