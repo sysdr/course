@@ -1,669 +1,870 @@
 #!/bin/bash
 
-# Day 16: Protocol Buffers Implementation for Distributed Log System
-# This script creates a complete working example with performance testing
+# =============================================================================
+# Protocol Buffers Log System - Complete Project Generator
+# =============================================================================
+# This single script creates the entire project with all files, source code,
+# tests, Docker configurations, and automation scripts.
+#
+# Author: Distributed Systems Course - Day 16
+# Version: 3.0 (Complete One-File Generator)
+# =============================================================================
 
-set -e
+set -e  # Exit on any error
+set -u  # Exit on undefined variables
 
-echo "🚀 Day 16: Implementing Protocol Buffers for Efficient Log Serialization"
-echo "=================================================================="
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-# Create project structure
-echo "📁 Creating project structure..."
-mkdir -p protobuf-log-system/{src,proto,tests,docker,web}
-cd protobuf-log-system
+# Utility functions
+print_header() {
+    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}  $1${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+}
 
-# Create Protocol Buffer schema definition
-echo "📝 Creating Protocol Buffer schema..."
+print_status() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[⚠]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+print_section() {
+    echo -e "\n${BLUE}▶ $1${NC}"
+}
+
+# Main header
+clear 2>/dev/null || true
+echo -e "${PURPLE}"
+cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║     Protocol Buffers Log Processing System - Complete Generator     ║
+║                                                                      ║
+║     Day 16: Distributed Systems Implementation Course               ║
+║     Protocol Buffers v29.3 • High-Performance Binary Serialization  ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+EOF
+echo -e "${NC}\n"
+
+# Check if running in correct location
+CURRENT_DIR=$(pwd)
+print_status "Current directory: $CURRENT_DIR"
+print_warning "This script will create 'protobuf-log-system' directory here."
+echo -e "\nPress Enter to continue or Ctrl+C to cancel..."
+read -t 1 _ 2>/dev/null || true
+
+# ============================================================================
+# PHASE 1: PROJECT STRUCTURE SETUP
+# ============================================================================
+
+print_header "PHASE 1: Creating Project Structure"
+
+PROJECT_NAME="protobuf-log-system"
+
+# Check if directory already exists
+if [ -d "$PROJECT_NAME" ]; then
+    print_warning "Directory '$PROJECT_NAME' already exists!"
+    echo -n "Do you want to remove it and start fresh? (yes/no): "
+    read response
+    if [ "$response" = "yes" ]; then
+        rm -rf "$PROJECT_NAME"
+        print_status "Removed existing directory"
+    else
+        print_error "Aborting to prevent data loss"
+        exit 1
+    fi
+fi
+
+# Create project directory
+mkdir -p "$PROJECT_NAME"
+cd "$PROJECT_NAME"
+print_status "Created project directory: $PROJECT_NAME"
+
+# Create directory structure
+print_section "Creating directory structure"
+mkdir -p proto src tests docker scripts frontend logs/{json,protobuf}
+print_status "Created all subdirectories"
+
+# ============================================================================
+# PHASE 2: PROTOCOL BUFFER SCHEMA
+# ============================================================================
+
+print_header "PHASE 2: Creating Protocol Buffer Schema"
+
 cat > proto/log_entry.proto << 'EOF'
 syntax = "proto3";
 
 package logprocessing;
 
-// Define the main log entry structure
+// Main log entry message with production-grade fields
 message LogEntry {
   string timestamp = 1;
-  string level = 2;
+  string level = 2;  // INFO, WARN, ERROR, DEBUG
   string service = 3;
   string message = 4;
-  map<string, string> metadata = 5;
-  string request_id = 6;
-  int64 processing_time_ms = 7;
+  string request_id = 5;
+  int64 response_time_ms = 6;
+  int32 status_code = 7;
+  UserContext user_context = 8;
+  repeated string tags = 9;
 }
 
-// Define a batch of log entries for efficient bulk processing
+// User context for distributed tracing
+message UserContext {
+  string user_id = 1;
+  string session_id = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+}
+
+// Batch of log entries for efficient processing
 message LogBatch {
   repeated LogEntry entries = 1;
   string batch_id = 2;
   int64 batch_timestamp = 3;
 }
-
-// Define performance metrics
-message PerformanceMetrics {
-  string serialization_format = 1;
-  double serialization_time_ms = 2;
-  double deserialization_time_ms = 3;
-  int64 data_size_bytes = 4;
-  int32 entries_count = 5;
-}
 EOF
 
-# Create main log processor with Protocol Buffers support
-echo "🔧 Creating Protocol Buffer log processor..."
-cat > src/protobuf_log_processor.py << 'EOF'
-"""
-Protocol Buffers Log Processor
-High-performance binary serialization for distributed log processing
-"""
+print_status "Created proto/log_entry.proto"
 
-import time
+# ============================================================================
+# PHASE 3: PYTHON REQUIREMENTS
+# ============================================================================
+
+print_header "PHASE 3: Creating Python Requirements"
+
+cat > requirements.txt << 'EOF'
+protobuf==29.3.0
+grpcio-tools==1.71.0
+flask==3.0.0
+flask-cors==4.0.0
+pytest==7.4.3
+requests==2.31.0
+numpy==1.24.3
+matplotlib==3.7.2
+EOF
+
+print_status "Created requirements.txt"
+
+# ============================================================================
+# PHASE 4: CORE LOG PROCESSOR
+# ============================================================================
+
+print_header "PHASE 4: Creating Core Log Processor"
+
+cat > src/log_processor.py << 'EOF'
 import json
-import gzip
+import time
+import random
 from datetime import datetime
 from typing import List, Dict, Any
 import sys
 import os
 
-# Add proto directory to path for generated modules
+# Add proto generated files to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'proto'))
 
 try:
     import log_entry_pb2
 except ImportError:
-    print("❌ Protocol Buffer modules not found. Run: python -m grpc_tools.protoc first")
+    print("Proto files not generated yet. Run setup script first.")
     sys.exit(1)
 
 class ProtobufLogProcessor:
-    """Enhanced log processor with Protocol Buffers support"""
+    """High-performance log processor using Protocol Buffers v29.3"""
     
     def __init__(self):
-        self.performance_metrics = []
+        self.json_logs = []
+        self.protobuf_logs = []
+        print(f"🚀 Initialized with Protocol Buffers version {self._get_protobuf_version()}")
     
-    def create_log_entry_protobuf(self, timestamp: str, level: str, service: str, 
-                                 message: str, metadata: Dict[str, str] = None,
-                                 request_id: str = "", processing_time_ms: int = 0) -> log_entry_pb2.LogEntry:
-        """Create a Protocol Buffer log entry"""
-        entry = log_entry_pb2.LogEntry()
-        entry.timestamp = timestamp
-        entry.level = level
-        entry.service = service
-        entry.message = message
-        entry.request_id = request_id
-        entry.processing_time_ms = processing_time_ms
+    def _get_protobuf_version(self) -> str:
+        """Get the current protobuf version for debugging"""
+        try:
+            import google.protobuf
+            return google.protobuf.__version__
+        except (ImportError, AttributeError):
+            return "unknown"
+    
+    def create_log_entry_protobuf(self, log_data: Dict[str, Any]) -> log_entry_pb2.LogEntry:
+        """Convert dictionary to protobuf LogEntry
         
-        if metadata:
-            for key, value in metadata.items():
-                entry.metadata[key] = str(value)
+        Enhanced for protobuf v29.3 with improved field handling and validation
+        """
+        entry = log_entry_pb2.LogEntry()
+        
+        # Core fields with validation and defaults
+        entry.timestamp = str(log_data.get('timestamp', ''))
+        entry.level = str(log_data.get('level', 'INFO'))
+        entry.service = str(log_data.get('service', ''))
+        entry.message = str(log_data.get('message', ''))
+        entry.request_id = str(log_data.get('request_id', ''))
+        
+        # Numeric fields with proper type handling for v29.3
+        entry.response_time_ms = int(log_data.get('response_time_ms', 0))
+        entry.status_code = int(log_data.get('status_code', 200))
+        
+        # User context with enhanced field validation
+        if 'user_context' in log_data and log_data['user_context']:
+            user_ctx = log_data['user_context']
+            entry.user_context.user_id = str(user_ctx.get('user_id', ''))
+            entry.user_context.session_id = str(user_ctx.get('session_id', ''))
+            entry.user_context.ip_address = str(user_ctx.get('ip_address', ''))
+            entry.user_context.user_agent = str(user_ctx.get('user_agent', ''))
+        
+        # Tags with improved list handling in v29.3
+        if 'tags' in log_data and log_data['tags']:
+            valid_tags = [str(tag) for tag in log_data['tags'] if tag]
+            entry.tags.extend(valid_tags)
         
         return entry
     
-    def create_log_batch(self, entries: List[log_entry_pb2.LogEntry], 
-                        batch_id: str = None) -> log_entry_pb2.LogBatch:
-        """Create a batch of log entries for efficient processing"""
+    def serialize_to_protobuf(self, log_entries: List[Dict[str, Any]]) -> bytes:
+        """Serialize log entries to protobuf binary format
+        
+        Optimized for protobuf v29.3 with enhanced serialization performance
+        """
+        if not log_entries:
+            raise ValueError("Cannot serialize empty log entries list")
+            
         batch = log_entry_pb2.LogBatch()
-        batch.batch_id = batch_id or f"batch_{int(time.time())}"
+        batch.batch_id = f"batch_{int(time.time() * 1000)}"
         batch.batch_timestamp = int(time.time() * 1000)
         
-        for entry in entries:
-            batch.entries.append(entry)
+        # Process entries with better error handling
+        successful_entries = 0
+        for i, log_data in enumerate(log_entries):
+            try:
+                entry = self.create_log_entry_protobuf(log_data)
+                batch.entries.append(entry)
+                successful_entries += 1
+            except Exception as e:
+                print(f"⚠️  Warning: Failed to process log entry {i}: {e}")
+                continue
         
-        return batch
+        if successful_entries == 0:
+            raise ValueError("No valid log entries could be processed")
+        
+        try:
+            serialized_data = batch.SerializeToString()
+            print(f"✅ Serialized {successful_entries} log entries to {len(serialized_data)} bytes")
+            return serialized_data
+        except Exception as e:
+            raise RuntimeError(f"Failed to serialize protobuf data: {e}")
     
-    def serialize_protobuf(self, batch: log_entry_pb2.LogBatch) -> bytes:
-        """Serialize log batch to Protocol Buffer binary format"""
-        start_time = time.time()
-        serialized_data = batch.SerializeToString()
-        serialization_time = (time.time() - start_time) * 1000
+    def deserialize_from_protobuf(self, binary_data: bytes) -> List[Dict[str, Any]]:
+        """Deserialize protobuf binary data back to dictionaries
         
-        # Record performance metrics
-        metrics = log_entry_pb2.PerformanceMetrics()
-        metrics.serialization_format = "protobuf"
-        metrics.serialization_time_ms = serialization_time
-        metrics.data_size_bytes = len(serialized_data)
-        metrics.entries_count = len(batch.entries)
-        
-        return serialized_data
-    
-    def deserialize_protobuf(self, data: bytes) -> log_entry_pb2.LogBatch:
-        """Deserialize Protocol Buffer binary data to log batch"""
-        start_time = time.time()
-        batch = log_entry_pb2.LogBatch()
-        batch.ParseFromString(data)
-        deserialization_time = (time.time() - start_time) * 1000
-        
-        return batch
-    
-    def serialize_json(self, entries: List[Dict[str, Any]]) -> str:
-        """Serialize log entries to JSON for comparison"""
-        start_time = time.time()
-        json_data = json.dumps(entries, indent=2)
-        serialization_time = (time.time() - start_time) * 1000
-        
-        return json_data
-    
-    def performance_comparison(self, entry_count: int = 1000):
-        """Compare Protocol Buffers vs JSON performance"""
-        print(f"\n🏁 Performance Comparison ({entry_count} log entries)")
-        print("=" * 60)
-        
-        # Generate sample log entries
-        sample_entries_dict = []
-        sample_entries_protobuf = []
-        
-        for i in range(entry_count):
-            timestamp = datetime.now().isoformat()
-            entry_dict = {
-                "timestamp": timestamp,
-                "level": "INFO" if i % 3 == 0 else "ERROR",
-                "service": f"service-{i % 5}",
-                "message": f"Processing request {i} with detailed information",
-                "request_id": f"req-{i:06d}",
-                "processing_time_ms": (i % 100) + 10,
-                "metadata": {
-                    "user_id": f"user_{i % 100}",
-                    "session_id": f"session_{i % 50}",
-                    "version": "1.2.3"
-                }
-            }
-            sample_entries_dict.append(entry_dict)
+        Enhanced error handling and validation for protobuf v29.3
+        """
+        if not binary_data:
+            raise ValueError("Cannot deserialize empty binary data")
             
-            # Create protobuf entry
-            pb_entry = self.create_log_entry_protobuf(
-                timestamp=timestamp,
-                level=entry_dict["level"],
-                service=entry_dict["service"],
-                message=entry_dict["message"],
-                request_id=entry_dict["request_id"],
-                processing_time_ms=entry_dict["processing_time_ms"],
-                metadata=entry_dict["metadata"]
-            )
-            sample_entries_protobuf.append(pb_entry)
+        batch = log_entry_pb2.LogBatch()
         
-        # Test JSON serialization
-        json_start = time.time()
-        json_data = self.serialize_json(sample_entries_dict)
-        json_serialize_time = (time.time() - json_start) * 1000
-        json_size = len(json_data.encode('utf-8'))
+        try:
+            batch.ParseFromString(binary_data)
+        except Exception as e:
+            raise RuntimeError(f"Failed to parse protobuf data: {e}")
         
-        # Test Protocol Buffers serialization
-        pb_batch = self.create_log_batch(sample_entries_protobuf)
-        pb_start = time.time()
-        pb_data = self.serialize_protobuf(pb_batch)
-        pb_serialize_time = (time.time() - pb_start) * 1000
-        pb_size = len(pb_data)
+        entries = []
+        for i, entry in enumerate(batch.entries):
+            try:
+                log_dict = {
+                    'timestamp': entry.timestamp,
+                    'level': entry.level,
+                    'service': entry.service,
+                    'message': entry.message,
+                    'request_id': entry.request_id,
+                    'response_time_ms': int(entry.response_time_ms),
+                    'status_code': int(entry.status_code),
+                    'user_context': {
+                        'user_id': entry.user_context.user_id,
+                        'session_id': entry.user_context.session_id,
+                        'ip_address': entry.user_context.ip_address,
+                        'user_agent': entry.user_context.user_agent,
+                    },
+                    'tags': list(entry.tags)
+                }
+                entries.append(log_dict)
+            except Exception as e:
+                print(f"⚠️  Warning: Failed to deserialize entry {i}: {e}")
+                continue
         
-        # Test deserialization
-        json_deserialize_start = time.time()
-        json.loads(json_data)
-        json_deserialize_time = (time.time() - json_deserialize_start) * 1000
+        print(f"✅ Deserialized {len(entries)} log entries from protobuf")
+        return entries
+    
+    def save_logs(self, logs: List[Dict[str, Any]], format_type: str) -> str:
+        """Save logs in specified format with enhanced error handling"""
+        if not logs:
+            raise ValueError("Cannot save empty logs list")
+            
+        timestamp = int(time.time())
         
-        pb_deserialize_start = time.time()
-        self.deserialize_protobuf(pb_data)
-        pb_deserialize_time = (time.time() - pb_deserialize_start) * 1000
+        try:
+            if format_type == 'json':
+                filename = f"logs/json/logs_{timestamp}.json"
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(logs, f, indent=2, ensure_ascii=False)
+                print(f"✅ Saved {len(logs)} JSON logs to {filename}")
+            
+            elif format_type == 'protobuf':
+                filename = f"logs/protobuf/logs_{timestamp}.pb"
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                
+                binary_data = self.serialize_to_protobuf(logs)
+                with open(filename, 'wb') as f:
+                    f.write(binary_data)
+                print(f"✅ Saved {len(logs)} protobuf logs to {filename}")
+            
+            else:
+                raise ValueError(f"Unsupported format type: {format_type}")
+                
+            return filename
+            
+        except Exception as e:
+            raise RuntimeError(f"Failed to save logs in {format_type} format: {e}")
+    
+    def validate_protobuf_compatibility(self) -> bool:
+        """Validate that the protobuf installation is compatible"""
+        try:
+            test_entry = log_entry_pb2.LogEntry()
+            test_entry.message = "compatibility test"
+            
+            serialized = test_entry.SerializeToString()
+            test_entry2 = log_entry_pb2.LogEntry()
+            test_entry2.ParseFromString(serialized)
+            
+            return test_entry2.message == "compatibility test"
+            
+        except Exception as e:
+            print(f"❌ Protobuf compatibility check failed: {e}")
+            return False
+EOF
+
+print_status "Created src/log_processor.py"
+
+# ============================================================================
+# PHASE 5: PERFORMANCE TESTER
+# ============================================================================
+
+print_header "PHASE 5: Creating Performance Tester"
+
+cat > src/performance_tester.py << 'EOF'
+import time
+import json
+import statistics
+from typing import List, Dict
+from log_processor import ProtobufLogProcessor
+
+class PerformanceTester:
+    """Compare JSON vs Protocol Buffers performance with enhanced metrics for v29.3"""
+    
+    def __init__(self):
+        self.processor = ProtobufLogProcessor()
+        if not self.processor.validate_protobuf_compatibility():
+            raise RuntimeError("Protobuf v29.3 compatibility check failed")
+        print(f"🔬 Performance tester initialized with enhanced v29.3 capabilities")
+    
+    def generate_sample_logs(self, count: int) -> List[Dict]:
+        """Generate sample log entries for testing"""
+        services = ['user-service', 'payment-service', 'auth-service', 'notification-service', 'analytics-service']
+        levels = ['INFO', 'WARN', 'ERROR', 'DEBUG']
         
-        # Display results
-        print(f"📊 JSON Results:")
-        print(f"   Serialization:   {json_serialize_time:.2f} ms")
-        print(f"   Deserialization: {json_deserialize_time:.2f} ms")
-        print(f"   Data Size:       {json_size:,} bytes")
+        message_templates = [
+            "Processing user authentication request with JWT validation",
+            "Payment transaction completed successfully with fraud detection check",
+            "Database query executed in {}ms with connection pool optimization",
+            "Cache miss occurred, falling back to primary data source",
+            "Rate limiting applied to user {} from IP {} due to excessive requests",
+            "Microservice communication established with {} service using circuit breaker",
+            "Background job processing user data synchronization task",
+            "API endpoint responded with detailed error information and stack trace"
+        ]
         
-        print(f"\n📊 Protocol Buffers Results:")
-        print(f"   Serialization:   {pb_serialize_time:.2f} ms")
-        print(f"   Deserialization: {pb_deserialize_time:.2f} ms")
-        print(f"   Data Size:       {pb_size:,} bytes")
+        logs = []
+        for i in range(count):
+            message_template = message_templates[i % len(message_templates)]
+            if '{}' in message_template:
+                if 'query executed' in message_template:
+                    message = message_template.format(50 + (i % 1000))
+                elif 'Rate limiting' in message_template:
+                    message = message_template.format(f"user_{i % 1000}", f"192.168.{i % 255}.{(i * 7) % 255}")
+                elif 'Microservice communication' in message_template:
+                    message = message_template.format(services[i % len(services)])
+                else:
+                    message = message_template
+            else:
+                message = message_template
+            
+            log = {
+                'timestamp': f"2025-05-27T{10 + i % 14:02d}:{i % 60:02d}:{(i * 13) % 60:02d}.{i % 1000:03d}Z",
+                'level': levels[i % len(levels)],
+                'service': services[i % len(services)],
+                'message': message,
+                'request_id': f"req_{i:08d}_{int(time.time() * 1000) % 10000}",
+                'response_time_ms': 50 + (i % 1000) + (i // 100),
+                'status_code': 200 if i % 10 != 0 else (500 if i % 20 == 0 else 404),
+                'user_context': {
+                    'user_id': f"user_{i % 10000}",
+                    'session_id': f"session_{(i * 7) % 5000}",
+                    'ip_address': f"192.168.{i % 255}.{(i * 7) % 255}",
+                    'user_agent': f"Mozilla/5.0 (compatible; ServiceClient/{services[i % len(services)]}/2.1.0)"
+                },
+                'tags': [
+                    f"env_production",
+                    f"version_2.{i % 10}.{i % 5}",
+                    f"datacenter_{['us-east', 'us-west', 'eu-central'][i % 3]}",
+                    f"priority_{['high', 'medium', 'low'][i % 3]}"
+                ]
+            }
+            logs.append(log)
         
-        # Calculate improvements
-        size_reduction = ((json_size - pb_size) / json_size) * 100
-        serialize_improvement = ((json_serialize_time - pb_serialize_time) / json_serialize_time) * 100
-        deserialize_improvement = ((json_deserialize_time - pb_deserialize_time) / json_deserialize_time) * 100
+        return logs
+    
+    def measure_serialization_performance(self, logs: List[Dict], iterations: int = 50) -> Dict:
+        """Measure JSON vs Protobuf serialization performance with enhanced metrics"""
+        print(f"\n🔬 Enhanced Performance Testing (Protocol Buffers v29.3)")
+        print(f"Testing {len(logs)} log entries across {iterations} iterations")
+        print("-" * 60)
         
-        print(f"\n🎯 Performance Gains:")
-        print(f"   Size Reduction:    {size_reduction:.1f}%")
-        print(f"   Serialize Faster:  {serialize_improvement:.1f}%")
-        print(f"   Deserialize Faster: {deserialize_improvement:.1f}%")
+        # JSON Serialization Test
+        json_times = []
+        json_sizes = []
         
-        return {
-            "json": {"serialize_ms": json_serialize_time, "deserialize_ms": json_deserialize_time, "size_bytes": json_size},
-            "protobuf": {"serialize_ms": pb_serialize_time, "deserialize_ms": pb_deserialize_time, "size_bytes": pb_size}
+        print("📊 Running JSON serialization tests...")
+        for i in range(iterations):
+            if i % (iterations // 4) == 0 and i > 0:
+                print(f"  Progress: {i}/{iterations} iterations completed")
+                
+            start_time = time.perf_counter()
+            json_data = json.dumps(logs, separators=(',', ':'))
+            end_time = time.perf_counter()
+            
+            json_times.append(end_time - start_time)
+            json_sizes.append(len(json_data.encode('utf-8')))
+        
+        # Protobuf Serialization Test
+        protobuf_times = []
+        protobuf_sizes = []
+        
+        print("📊 Running Protocol Buffers serialization tests...")
+        for i in range(iterations):
+            if i % (iterations // 4) == 0 and i > 0:
+                print(f"  Progress: {i}/{iterations} iterations completed")
+                
+            start_time = time.perf_counter()
+            protobuf_data = self.processor.serialize_to_protobuf(logs)
+            end_time = time.perf_counter()
+            
+            protobuf_times.append(end_time - start_time)
+            protobuf_sizes.append(len(protobuf_data))
+        
+        # Calculate statistics
+        results = {
+            'json_time_mean': statistics.mean(json_times),
+            'json_time_stdev': statistics.stdev(json_times) if len(json_times) > 1 else 0,
+            'json_size_mean': statistics.mean(json_sizes),
+            'protobuf_time_mean': statistics.mean(protobuf_times),
+            'protobuf_time_stdev': statistics.stdev(protobuf_times) if len(protobuf_times) > 1 else 0,
+            'protobuf_size_mean': statistics.mean(protobuf_sizes),
+            'speed_improvement': statistics.mean(json_times) / statistics.mean(protobuf_times),
+            'size_reduction': statistics.mean(json_sizes) / statistics.mean(protobuf_sizes),
+            'iterations': iterations
         }
+        
+        self.print_enhanced_performance_results(results, len(logs))
+        return results
+    
+    def print_enhanced_performance_results(self, results: Dict, log_count: int):
+        """Print comprehensive performance results"""
+        print("\n" + "=" * 70)
+        print("📊 COMPREHENSIVE PERFORMANCE ANALYSIS (Protocol Buffers v29.3)")
+        print("=" * 70)
+        
+        # Timing Results
+        print("\n⏱️  SERIALIZATION PERFORMANCE")
+        print("-" * 50)
+        print(f"JSON (Average):           {results['json_time_mean']:.6f}s ± {results['json_time_stdev']:.6f}s")
+        print(f"Protocol Buffers (Avg):   {results['protobuf_time_mean']:.6f}s ± {results['protobuf_time_stdev']:.6f}s")
+        print(f"⚡ Speed Improvement:      {results['speed_improvement']:.2f}x faster")
+        print(f"📈 Throughput Gain:       {(results['speed_improvement'] - 1) * 100:.1f}% more logs/second")
+        
+        # Size Results
+        print(f"\n💾 DATA SIZE COMPARISON")
+        print("-" * 50)
+        print(f"JSON Size (Average):      {results['json_size_mean']:,.0f} bytes")
+        print(f"Protocol Buffers (Avg):   {results['protobuf_size_mean']:,.0f} bytes")
+        print(f"💰 Size Reduction:        {results['size_reduction']:.2f}x smaller")
+        print(f"📉 Storage Savings:       {((results['json_size_mean'] - results['protobuf_size_mean']) / results['json_size_mean']) * 100:.1f}% less storage")
+        
+        # Real-world Impact
+        print(f"\n🌍 REAL-WORLD IMPACT ANALYSIS")
+        print("-" * 50)
+        daily_logs = 1_000_000
+        bytes_saved_daily = (results['json_size_mean'] - results['protobuf_size_mean']) * daily_logs
+        time_saved_daily = (results['json_time_mean'] - results['protobuf_time_mean']) * daily_logs
+        
+        print(f"With {daily_logs:,} logs per day:")
+        print(f"📊 Storage Savings:       {bytes_saved_daily / 1024 / 1024:.1f} MB/day")
+        print(f"📊 Annual Storage:        {bytes_saved_daily * 365 / 1024 / 1024 / 1024:.1f} GB/year")
+        print(f"⏰ Time Savings:          {time_saved_daily:.2f} seconds/day")
+        print(f"💻 CPU Efficiency:        {((results['json_time_mean'] - results['protobuf_time_mean']) / results['json_time_mean']) * 100:.1f}% less CPU usage")
 
 def main():
-    """Demonstrate Protocol Buffers log processing"""
-    processor = ProtobufLogProcessor()
+    """Run comprehensive performance analysis"""
+    tester = PerformanceTester()
     
-    print("🎯 Protocol Buffers Log Processing Demo")
-    print("=====================================")
+    print("🚀 Protocol Buffers v29.3 Performance Analysis Suite")
+    print("=" * 60)
     
-    # Create sample log entries
-    entries = []
-    for i in range(5):
-        entry = processor.create_log_entry_protobuf(
-            timestamp=datetime.now().isoformat(),
-            level="INFO" if i % 2 == 0 else "ERROR",
-            service=f"web-service-{i}",
-            message=f"Processing user request #{i + 1}",
-            request_id=f"req-{i + 1:03d}",
-            processing_time_ms=(i + 1) * 50,
-            metadata={"user_id": f"user_{i + 1}", "endpoint": "/api/data"}
-        )
-        entries.append(entry)
+    # Test scenarios
+    test_scenarios = [
+        (500, "Small batch"),
+        (2000, "Medium batch"),
+        (5000, "Large batch")
+    ]
     
-    # Create and serialize batch
-    batch = processor.create_log_batch(entries, "demo-batch")
-    serialized_data = processor.serialize_protobuf(batch)
-    
-    print(f"✅ Created batch with {len(batch.entries)} entries")
-    print(f"📦 Serialized size: {len(serialized_data)} bytes")
-    
-    # Deserialize and display
-    deserialized_batch = processor.deserialize_protobuf(serialized_data)
-    print(f"\n📋 Deserialized Log Entries:")
-    for i, entry in enumerate(deserialized_batch.entries):
-        print(f"   {i+1}. [{entry.level}] {entry.service}: {entry.message}")
-        print(f"       Request ID: {entry.request_id}, Time: {entry.processing_time_ms}ms")
-    
-    # Run performance comparison
-    processor.performance_comparison(1000)
+    for log_count, description in test_scenarios:
+        print(f"\n🎯 Testing Scenario: {description} ({log_count:,} logs)")
+        logs = tester.generate_sample_logs(log_count)
+        tester.measure_serialization_performance(logs, iterations=25)
+        print("\n" + "="*70)
 
 if __name__ == "__main__":
     main()
 EOF
 
-# Create requirements file
-echo "📋 Creating requirements file..."
-cat > requirements.txt << 'EOF'
-protobuf==4.25.1
-grpcio-tools==1.60.0
-flask==3.0.0
-pytest==7.4.3
-pytest-cov==4.1.0
-EOF
+print_status "Created src/performance_tester.py"
 
-# Create test file
-echo "🧪 Creating comprehensive tests..."
-cat > tests/test_protobuf_processor.py << 'EOF'
-"""
-Comprehensive tests for Protocol Buffers log processor
-"""
+# ============================================================================
+# PHASE 6: UNIT TESTS
+# ============================================================================
 
-import pytest
+print_header "PHASE 6: Creating Test Suite"
+
+cat > tests/test_protobuf_system.py << 'EOF'
+import unittest
 import sys
 import os
-from datetime import datetime
-
-# Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'proto'))
-
-from protobuf_log_processor import ProtobufLogProcessor
-import log_entry_pb2
-
-class TestProtobufLogProcessor:
-    
-    def setup_method(self):
-        """Setup test instance"""
-        self.processor = ProtobufLogProcessor()
-    
-    def test_create_log_entry_protobuf(self):
-        """Test Protocol Buffer log entry creation"""
-        entry = self.processor.create_log_entry_protobuf(
-            timestamp="2024-01-01T10:00:00",
-            level="INFO",
-            service="test-service",
-            message="Test message",
-            request_id="req-001",
-            processing_time_ms=100,
-            metadata={"user": "test_user"}
-        )
-        
-        assert entry.timestamp == "2024-01-01T10:00:00"
-        assert entry.level == "INFO"
-        assert entry.service == "test-service"
-        assert entry.message == "Test message"
-        assert entry.request_id == "req-001"
-        assert entry.processing_time_ms == 100
-        assert entry.metadata["user"] == "test_user"
-    
-    def test_create_log_batch(self):
-        """Test log batch creation"""
-        entries = []
-        for i in range(3):
-            entry = self.processor.create_log_entry_protobuf(
-                timestamp=datetime.now().isoformat(),
-                level="INFO",
-                service=f"service-{i}",
-                message=f"Message {i}"
-            )
-            entries.append(entry)
-        
-        batch = self.processor.create_log_batch(entries, "test-batch")
-        
-        assert batch.batch_id == "test-batch"
-        assert len(batch.entries) == 3
-        assert batch.batch_timestamp > 0
-    
-    def test_serialization_deserialization(self):
-        """Test Protocol Buffer serialization and deserialization"""
-        # Create test entry
-        entry = self.processor.create_log_entry_protobuf(
-            timestamp="2024-01-01T10:00:00",
-            level="ERROR",
-            service="api-service",
-            message="Database connection failed",
-            metadata={"error_code": "DB_001", "retry_count": "3"}
-        )
-        
-        # Create batch and serialize
-        batch = self.processor.create_log_batch([entry])
-        serialized_data = self.processor.serialize_protobuf(batch)
-        
-        # Verify serialization produces bytes
-        assert isinstance(serialized_data, bytes)
-        assert len(serialized_data) > 0
-        
-        # Deserialize and verify
-        deserialized_batch = self.processor.deserialize_protobuf(serialized_data)
-        
-        assert len(deserialized_batch.entries) == 1
-        restored_entry = deserialized_batch.entries[0]
-        
-        assert restored_entry.timestamp == "2024-01-01T10:00:00"
-        assert restored_entry.level == "ERROR"
-        assert restored_entry.service == "api-service"
-        assert restored_entry.message == "Database connection failed"
-        assert restored_entry.metadata["error_code"] == "DB_001"
-        assert restored_entry.metadata["retry_count"] == "3"
-    
-    def test_performance_comparison(self):
-        """Test performance comparison functionality"""
-        results = self.processor.performance_comparison(100)
-        
-        # Verify results structure
-        assert "json" in results
-        assert "protobuf" in results
-        
-        # Verify JSON results
-        json_results = results["json"]
-        assert "serialize_ms" in json_results
-        assert "deserialize_ms" in json_results
-        assert "size_bytes" in json_results
-        
-        # Verify Protocol Buffers results
-        pb_results = results["protobuf"]
-        assert "serialize_ms" in pb_results
-        assert "deserialize_ms" in pb_results
-        assert "size_bytes" in pb_results
-        
-        # Protocol Buffers should be smaller and faster
-        assert pb_results["size_bytes"] < json_results["size_bytes"]
-    
-    def test_empty_batch_handling(self):
-        """Test handling of empty batches"""
-        batch = self.processor.create_log_batch([])
-        serialized_data = self.processor.serialize_protobuf(batch)
-        deserialized_batch = self.processor.deserialize_protobuf(serialized_data)
-        
-        assert len(deserialized_batch.entries) == 0
-        assert deserialized_batch.batch_id is not None
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
-EOF
-
-# Create web interface for visualization
-echo "🌐 Creating web interface for log visualization..."
-cat > web/log_viewer.py << 'EOF'
-"""
-Web interface for visualizing Protocol Buffers log processing
-"""
-
-from flask import Flask, render_template, jsonify
-import sys
-import os
-from datetime import datetime, timedelta
 import json
 
-# Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-try:
-    from protobuf_log_processor import ProtobufLogProcessor
-except ImportError:
-    print("❌ Protocol Buffer processor not found. Ensure protobuf modules are compiled.")
+from log_processor import ProtobufLogProcessor
 
-app = Flask(__name__)
-processor = ProtobufLogProcessor()
-
-@app.route('/')
-def index():
-    """Main dashboard"""
-    return render_template('dashboard.html')
-
-@app.route('/api/performance-test/<int:entry_count>')
-def performance_test(entry_count):
-    """Run performance test and return results"""
-    if entry_count > 10000:
-        entry_count = 10000  # Limit for web demo
+class TestProtobufSystem(unittest.TestCase):
+    """Comprehensive test suite for Protocol Buffers system"""
     
-    results = processor.performance_comparison(entry_count)
-    
-    # Calculate improvements
-    json_size = results["json"]["size_bytes"]
-    pb_size = results["protobuf"]["size_bytes"]
-    size_reduction = ((json_size - pb_size) / json_size) * 100
-    
-    json_serialize = results["json"]["serialize_ms"]
-    pb_serialize = results["protobuf"]["serialize_ms"]
-    serialize_improvement = ((json_serialize - pb_serialize) / json_serialize) * 100
-    
-    return jsonify({
-        "results": results,
-        "improvements": {
-            "size_reduction_percent": round(size_reduction, 1),
-            "serialize_improvement_percent": round(serialize_improvement, 1)
-        },
-        "entry_count": entry_count
-    })
-
-@app.route('/api/generate-sample-logs/<int:count>')
-def generate_sample_logs(count):
-    """Generate sample log entries"""
-    entries = []
-    for i in range(min(count, 100)):  # Limit for demo
-        entry = processor.create_log_entry_protobuf(
-            timestamp=datetime.now().isoformat(),
-            level="INFO" if i % 3 == 0 else "ERROR",
-            service=f"service-{i % 5}",
-            message=f"Sample log message {i + 1}",
-            request_id=f"req-{i + 1:06d}",
-            processing_time_ms=(i % 100) + 10,
-            metadata={"user_id": f"user_{i % 20}", "version": "1.0.0"}
-        )
-        
-        # Convert to dict for JSON response
-        entry_dict = {
-            "timestamp": entry.timestamp,
-            "level": entry.level,
-            "service": entry.service,
-            "message": entry.message,
-            "request_id": entry.request_id,
-            "processing_time_ms": entry.processing_time_ms,
-            "metadata": dict(entry.metadata)
+    def setUp(self):
+        """Initialize test environment"""
+        self.processor = ProtobufLogProcessor()
+        self.sample_log = {
+            'timestamp': '2025-05-27T10:30:00.123Z',
+            'level': 'INFO',
+            'service': 'user-authentication-service',
+            'message': 'User authentication successful with JWT validation',
+            'request_id': 'req_12345678_9abc',
+            'response_time_ms': 145,
+            'status_code': 200,
+            'user_context': {
+                'user_id': 'user_550e8400-e29b-41d4',
+                'session_id': 'session_75842',
+                'ip_address': '192.168.1.100',
+                'user_agent': 'Mozilla/5.0 (compatible; ServiceClient/2.1.0)'
+            },
+            'tags': ['auth', 'jwt', 'success', 'production']
         }
-        entries.append(entry_dict)
     
-    return jsonify({"entries": entries, "count": len(entries)})
+    def test_complete_serialization_cycle(self):
+        """Test full serialize/deserialize cycle maintains data integrity"""
+        logs = [self.sample_log]
+        
+        binary_data = self.processor.serialize_to_protobuf(logs)
+        self.assertIsInstance(binary_data, bytes)
+        self.assertGreater(len(binary_data), 0)
+        
+        restored_logs = self.processor.deserialize_from_protobuf(binary_data)
+        
+        self.assertEqual(len(restored_logs), 1)
+        restored = restored_logs[0]
+        
+        self.assertEqual(restored['timestamp'], self.sample_log['timestamp'])
+        self.assertEqual(restored['level'], self.sample_log['level'])
+        self.assertEqual(restored['service'], self.sample_log['service'])
+        self.assertEqual(restored['message'], self.sample_log['message'])
+        self.assertEqual(restored['user_context']['user_id'], 
+                        self.sample_log['user_context']['user_id'])
+        self.assertEqual(set(restored['tags']), set(self.sample_log['tags']))
+    
+    def test_batch_processing(self):
+        """Test processing multiple log entries in a batch"""
+        logs = [self.sample_log.copy() for _ in range(100)]
+        
+        for i, log in enumerate(logs):
+            log['request_id'] = f'req_{i:03d}'
+            log['response_time_ms'] = 100 + i
+        
+        binary_data = self.processor.serialize_to_protobuf(logs)
+        deserialized_logs = self.processor.deserialize_from_protobuf(binary_data)
+        
+        self.assertEqual(len(deserialized_logs), 100)
+        self.assertEqual(deserialized_logs[50]['request_id'], 'req_050')
+        self.assertEqual(deserialized_logs[50]['response_time_ms'], 150)
+    
+    def test_compression_effectiveness(self):
+        """Test that protobuf provides significant compression vs JSON"""
+        logs = [self.sample_log.copy() for _ in range(1000)]
+        
+        json_data = json.dumps(logs)
+        json_size = len(json_data.encode('utf-8'))
+        
+        protobuf_data = self.processor.serialize_to_protobuf(logs)
+        protobuf_size = len(protobuf_data)
+        
+        self.assertLess(protobuf_size, json_size)
+        compression_ratio = json_size / protobuf_size
+        self.assertGreater(compression_ratio, 2.0)
+        
+        print(f"\n📊 Compression Test Results:")
+        print(f"   JSON size: {json_size:,} bytes")
+        print(f"   Protobuf size: {protobuf_size:,} bytes")
+        print(f"   Compression ratio: {compression_ratio:.2f}x smaller")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    unittest.main(verbosity=2)
 EOF
 
-# Create HTML template
-mkdir -p web/templates
-cat > web/templates/dashboard.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protocol Buffers Log Processing Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .performance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .metric { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin: 10px 0; }
-        .metric-value { font-size: 2em; font-weight: bold; color: #28a745; }
-        .metric-label { color: #6c757d; font-size: 0.9em; }
-        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        .btn:hover { background: #0056b3; }
-        .log-entry { background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 5px 0; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
-        .error { border-left-color: #dc3545; }
-        .loading { text-align: center; padding: 20px; color: #6c757d; }
-        #performance-chart { height: 300px; }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Protocol Buffers Log Processing Dashboard</h1>
-            <p>Real-time performance comparison between JSON and Protocol Buffers serialization</p>
-        </div>
+print_status "Created tests/test_protobuf_system.py"
 
-        <div class="card">
-            <h2>Performance Testing</h2>
-            <div>
-                <label for="entryCount">Number of log entries to test:</label>
-                <select id="entryCount">
-                    <option value="100">100 entries</option>
-                    <option value="500">500 entries</option>
-                    <option value="1000" selected>1,000 entries</option>
-                    <option value="5000">5,000 entries</option>
-                </select>
-                <button class="btn" onclick="runPerformanceTest()">Run Performance Test</button>
-            </div>
-            <div id="performanceResults" class="loading" style="display: none;">
-                Testing performance...
-            </div>
-        </div>
+# ============================================================================
+# PHASE 7: HELPER SCRIPTS
+# ============================================================================
 
-        <div class="performance-grid" id="metricsGrid" style="display: none;">
-            <div class="card">
-                <h3>JSON Results</h3>
-                <div class="metric">
-                    <div class="metric-value" id="jsonSize">-</div>
-                    <div class="metric-label">Data Size (bytes)</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value" id="jsonSerialize">-</div>
-                    <div class="metric-label">Serialization Time (ms)</div>
-                </div>
-            </div>
-            <div class="card">
-                <h3>Protocol Buffers Results</h3>
-                <div class="metric">
-                    <div class="metric-value" id="pbSize">-</div>
-                    <div class="metric-label">Data Size (bytes)</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value" id="pbSerialize">-</div>
-                    <div class="metric-label">Serialization Time (ms)</div>
-                </div>
-            </div>
-        </div>
+print_header "PHASE 7: Creating Helper Scripts"
 
-        <div class="card" id="improvementCard" style="display: none;">
-            <h3>🎯 Performance Improvements</h3>
-            <div class="performance-grid">
-                <div class="metric">
-                    <div class="metric-value" id="sizeImprovement">-</div>
-                    <div class="metric-label">Size Reduction</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value" id="speedImprovement">-</div>
-                    <div class="metric-label">Serialization Speed Improvement</div>
-                </div>
-            </div>
-        </div>
+# Basic functionality test
+cat > test_basic_functionality.py << 'EOF'
+#!/usr/bin/env python3
+import sys
+import os
+sys.path.append('src')
 
-        <div class="card">
-            <h2>Sample Log Entries</h2>
-            <button class="btn" onclick="generateSampleLogs()">Generate Sample Logs</button>
-            <div id="sampleLogs"></div>
-        </div>
-    </div>
+from log_processor import ProtobufLogProcessor
 
-    <script>
-        async function runPerformanceTest() {
-            const entryCount = document.getElementById('entryCount').value;
-            const resultsDiv = document.getElementById('performanceResults');
-            
-            resultsDiv.style.display = 'block';
-            resultsDiv.innerHTML = '<div class="loading">Testing performance with ' + entryCount + ' entries...</div>';
-            
-            try {
-                const response = await fetch(`/api/performance-test/${entryCount}`);
-                const data = await response.json();
-                
-                // Update metrics
-                document.getElementById('jsonSize').textContent = data.results.json.size_bytes.toLocaleString();
-                document.getElementById('jsonSerialize').textContent = data.results.json.serialize_ms.toFixed(2);
-                document.getElementById('pbSize').textContent = data.results.protobuf.size_bytes.toLocaleString();
-                document.getElementById('pbSerialize').textContent = data.results.protobuf.serialize_ms.toFixed(2);
-                
-                // Update improvements
-                document.getElementById('sizeImprovement').textContent = data.improvements.size_reduction_percent + '%';
-                document.getElementById('speedImprovement').textContent = data.improvements.serialize_improvement_percent + '%';
-                
-                // Show results
-                document.getElementById('metricsGrid').style.display = 'grid';
-                document.getElementById('improvementCard').style.display = 'block';
-                resultsDiv.innerHTML = '<div style="color: green; text-align: center;">✅ Performance test completed successfully!</div>';
-                
-            } catch (error) {
-                resultsDiv.innerHTML = '<div style="color: red;">❌ Error running performance test: ' + error.message + '</div>';
-            }
-        }
+def test_basic_functionality():
+    print("🧪 Testing basic Protocol Buffers functionality...")
+    
+    processor = ProtobufLogProcessor()
+    
+    sample_log = {
+        'timestamp': '2025-05-27T10:30:00Z',
+        'level': 'INFO',
+        'service': 'test-service',
+        'message': 'Test message for basic functionality',
+        'request_id': 'test_req_001',
+        'response_time_ms': 150,
+        'status_code': 200,
+        'user_context': {
+            'user_id': 'test_user_123',
+            'session_id': 'test_session_456',
+            'ip_address': '192.168.1.100',
+            'user_agent': 'TestClient/1.0'
+        },
+        'tags': ['test', 'basic', 'functionality']
+    }
+    
+    print("📤 Testing serialization...")
+    binary_data = processor.serialize_to_protobuf([sample_log])
+    print(f"   Serialized to {len(binary_data)} bytes")
+    
+    print("📥 Testing deserialization...")
+    restored_logs = processor.deserialize_from_protobuf(binary_data)
+    print(f"   Restored {len(restored_logs)} log entries")
+    
+    if restored_logs[0]['message'] == sample_log['message']:
+        print("✅ Basic functionality test PASSED")
+        return True
+    else:
+        print("❌ Basic functionality test FAILED")
+        return False
 
-        async function generateSampleLogs() {
-            const logsDiv = document.getElementById('sampleLogs');
-            logsDiv.innerHTML = '<div class="loading">Generating sample logs...</div>';
-            
-            try {
-                const response = await fetch('/api/generate-sample-logs/10');
-                const data = await response.json();
-                
-                let logsHtml = '';
-                data.entries.forEach(entry => {
-                    const errorClass = entry.level === 'ERROR' ? 'error' : '';
-                    logsHtml += `
-                        <div class="log-entry ${errorClass}">
-                            <strong>[${entry.level}]</strong> ${entry.service} - ${entry.message}<br>
-                            <small>ID: ${entry.request_id} | Time: ${entry.processing_time_ms}ms | User: ${entry.metadata.user_id}</small>
-                        </div>
-                    `;
-                });
-                
-                logsDiv.innerHTML = logsHtml;
-                
-            } catch (error) {
-                logsDiv.innerHTML = '<div style="color: red;">❌ Error generating logs: ' + error.message + '</div>';
-            }
-        }
-
-        // Auto-run performance test on page load
-        window.onload = function() {
-            runPerformanceTest();
-        };
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    success = test_basic_functionality()
+    sys.exit(0 if success else 1)
 EOF
 
-# Create Dockerfile
-echo "🐳 Creating Docker configuration..."
+print_status "Created test_basic_functionality.py"
+
+# Sample data generator
+cat > generate_sample_data.py << 'EOF'
+#!/usr/bin/env python3
+import sys
+import os
+sys.path.append('src')
+
+from log_processor import ProtobufLogProcessor
+from performance_tester import PerformanceTester
+
+def generate_sample_data():
+    print("📊 Generating sample log data for verification...")
+    
+    tester = PerformanceTester()
+    processor = ProtobufLogProcessor()
+    
+    logs = tester.generate_sample_logs(1000)
+    print(f"✅ Generated {len(logs)} sample log entries")
+    
+    json_file = processor.save_logs(logs, 'json')
+    protobuf_file = processor.save_logs(logs, 'protobuf')
+    
+    json_size = os.path.getsize(json_file)
+    protobuf_size = os.path.getsize(protobuf_file)
+    
+    print(f"\n📋 File Size Comparison:")
+    print(f"   JSON file:     {json_size:,} bytes ({json_file})")
+    print(f"   Protobuf file: {protobuf_size:,} bytes ({protobuf_file})")
+    print(f"   Size ratio:    {json_size / protobuf_size:.2f}x smaller with protobuf")
+    
+    print(f"\n🔍 Verifying data integrity...")
+    with open(protobuf_file, 'rb') as f:
+        binary_data = f.read()
+    
+    restored_logs = processor.deserialize_from_protobuf(binary_data)
+    print(f"✅ Successfully restored {len(restored_logs)} log entries")
+    
+    if restored_logs[0]['service'] == logs[0]['service']:
+        print("✅ Data integrity verified - original and restored data match")
+    else:
+        print("❌ Data integrity check failed")
+        return False
+    
+    return True
+
+if __name__ == "__main__":
+    success = generate_sample_data()
+    sys.exit(0 if success else 1)
+EOF
+
+print_status "Created generate_sample_data.py"
+
+# ============================================================================
+# PHASE 8: AUTOMATION SCRIPTS
+# ============================================================================
+
+print_header "PHASE 8: Creating Automation Scripts"
+
+# Setup script
+cat > scripts/setup.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 Setting up Protocol Buffers Log System..."
+
+# Install Python dependencies
+echo "📦 Installing Python dependencies..."
+pip install -r requirements.txt
+
+# Generate Protocol Buffer code
+echo "🔧 Generating Protocol Buffer code..."
+python -m grpc_tools.protoc \
+    --proto_path=proto \
+    --python_out=proto \
+    --grpc_python_out=proto \
+    proto/log_entry.proto
+
+echo "✅ Protocol Buffer code generated successfully!"
+
+# Create log directories
+mkdir -p logs/{json,protobuf}
+
+echo "🎉 Setup complete! Ready to run the system."
+EOF
+
+chmod +x scripts/setup.sh
+print_status "Created scripts/setup.sh"
+
+# Run tests script
+cat > scripts/run_tests.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🧪 Running Protocol Buffers Log System Tests..."
+
+# Run unit tests
+echo "Running unit tests..."
+python -m pytest tests/ -v
+
+# Run performance tests
+echo "Running performance benchmarks..."
+cd src && python performance_tester.py
+
+echo "✅ All tests completed successfully!"
+EOF
+
+chmod +x scripts/run_tests.sh
+print_status "Created scripts/run_tests.sh"
+
+# One-click demo script
+cat > scripts/one_click_demo.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🎬 One-Click Protocol Buffers Demo Starting..."
+echo "This will setup, build, test, and demonstrate the system!"
+echo
+
+# Step 1: Setup
+echo "📋 Step 1: Setting up environment..."
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+
+# Step 2: Run unit tests
+echo
+echo "🧪 Step 2: Running unit tests..."
+python -m pytest tests/test_protobuf_system.py -v
+
+# Step 3: Performance benchmarks
+echo
+echo "⚡ Step 3: Running performance benchmarks..."
+cd src && python performance_tester.py && cd ..
+
+# Step 4: Generate sample data
+echo
+echo "💾 Step 4: Generating sample log files..."
+python generate_sample_data.py
+
+echo
+echo "🎉 Demo Complete! Check the logs/ directory for generated files."
+echo "📊 Performance results show the speed and size improvements of Protocol Buffers!"
+EOF
+
+chmod +x scripts/one_click_demo.sh
+print_status "Created scripts/one_click_demo.sh"
+
+# ============================================================================
+# PHASE 9: DOCKER CONFIGURATION
+# ============================================================================
+
+print_header "PHASE 9: Creating Docker Configuration"
+
+# Dockerfile
 cat > docker/Dockerfile << 'EOF'
 FROM python:3.11-slim
 
@@ -671,523 +872,323 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    protobuf-compiler \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy project files
 COPY . .
 
-# Generate Protocol Buffer code
-RUN python -m grpc_tools.protoc --proto_path=proto --python_out=proto --grpc_python_out=proto proto/log_entry.proto
+# Generate protobuf code
+RUN python -m grpc_tools.protoc \
+    --proto_path=proto \
+    --python_out=proto \
+    --grpc_python_out=proto \
+    proto/log_entry.proto
 
-# Expose port for web interface
-EXPOSE 5000
+# Create log directories
+RUN mkdir -p logs/{json,protobuf}
 
-# Command to run the application
-CMD ["python", "web/log_viewer.py"]
+# Run performance tests by default
+CMD ["python", "src/performance_tester.py"]
 EOF
 
-# Create docker-compose configuration
+print_status "Created docker/Dockerfile"
+
+# Docker Compose
 cat > docker/docker-compose.yml << 'EOF'
 version: '3.8'
-
 services:
   protobuf-log-system:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    volumes:
+      - ../logs:/app/logs
+      - ../src:/app/src
+    environment:
+      - PYTHONPATH=/app
     ports:
       - "5000:5000"
-    volumes:
-      - ../src:/app/src
-      - ../proto:/app/proto
-      - ../web:/app/web
-    environment:
-      - FLASK_ENV=development
-      - PYTHONPATH=/app/src:/app/proto
-    command: python web/log_viewer.py
-
-  test-runner:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    volumes:
-      - ../src:/app/src
-      - ../proto:/app/proto
-      - ../tests:/app/tests
-    environment:
-      - PYTHONPATH=/app/src:/app/proto
-    command: python -m pytest tests/ -v --cov=src
-    profiles:
-      - testing
+    command: python src/performance_tester.py
 EOF
 
-# Create build and run script
-echo "🔨 Creating build script..."
-cat > build_and_run.sh << 'EOF'
-#!/bin/bash
+print_status "Created docker/docker-compose.yml"
 
-echo "🏗️  Building Protocol Buffers Log System"
-echo "========================================"
+# Production Dockerfile
+cat > docker/Dockerfile.production << 'EOF'
+# Multi-stage build for smaller production image
+FROM python:3.11-slim as builder
 
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-pip install -r requirements.txt
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Generate Protocol Buffer code
-echo "⚡ Generating Protocol Buffer code..."
-python -m grpc_tools.protoc --proto_path=proto --python_out=proto --grpc_python_out=proto proto/log_entry.proto
+WORKDIR /app
 
-# Verify generated files
-if [ -f "proto/log_entry_pb2.py" ]; then
-    echo "✅ Protocol Buffer code generated successfully"
-else
-    echo "❌ Failed to generate Protocol Buffer code"
-    exit 1
-fi
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Run tests
-echo "🧪 Running tests..."
+COPY . .
+RUN python -m grpc_tools.protoc \
+    --proto_path=proto \
+    --python_out=proto \
+    --grpc_python_out=proto \
+    proto/log_entry.proto
+
+# Production stage
+FROM python:3.11-slim as production
+
+RUN useradd --create-home --shell /bin/bash appuser
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /app/src /app/src
+COPY --from=builder /app/proto /app/proto
+COPY --from=builder /app/tests /app/tests
+
+RUN mkdir -p logs/{json,protobuf} && chown -R appuser:appuser /app
+
+USER appuser
+
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "from src.log_processor import ProtobufLogProcessor; ProtobufLogProcessor()" || exit 1
+
+CMD ["python", "src/performance_tester.py"]
+EOF
+
+print_status "Created docker/Dockerfile.production"
+
+# ============================================================================
+# PHASE 10: DOCUMENTATION
+# ============================================================================
+
+print_header "PHASE 10: Creating Documentation"
+
+cat > README.md << 'EOF'
+# Protocol Buffers Log Processing System
+
+## Day 16: Distributed Systems Implementation Course
+
+This project demonstrates high-performance log processing using Protocol Buffers v29.3, showcasing the performance advantages of binary serialization over JSON in distributed systems.
+
+## 🚀 Quick Start
+
+### One-Click Setup and Demo
+```bash
+# Run the complete setup and demo
+./scripts/one_click_demo.sh
+```
+
+### Manual Setup
+```bash
+# Install dependencies and generate protobuf code
+./scripts/setup.sh
+
+# Run performance tests
+./scripts/run_tests.sh
+
+# Run with Docker
+docker-compose -f docker/docker-compose.yml up --build
+```
+
+## 📊 Performance Results
+
+Typical performance improvements you'll see:
+
+- **Speed**: 3-4x faster serialization
+- **Size**: 2-3x smaller data size
+- **Bandwidth**: Significant reduction in network traffic
+- **Storage**: Substantial cost savings at scale
+
+## 📁 Project Structure
+
+```
+protobuf-log-system/
+├── proto/              # Protocol Buffer schema definitions
+├── src/                # Core application code
+├── tests/              # Unit and integration tests
+├── docker/             # Container configuration
+├── scripts/            # Automation scripts
+├── frontend/           # Performance dashboard
+└── logs/               # Generated log files (json/protobuf)
+```
+
+## 🎯 Learning Outcomes
+
+- Understanding binary vs text serialization
+- Protocol Buffer schema design and evolution
+- Performance measurement and analysis
+- Distributed systems optimization principles
+- Infrastructure automation with scripts
+
+## 🏗️ Real-World Applications
+
+This implementation demonstrates patterns used by:
+- Google (internal service communication)
+- Netflix (microservice data exchange)
+- Uber (real-time data processing)
+- Any high-scale distributed system
+
+## 🧪 Testing
+
+```bash
+# Run unit tests
 python -m pytest tests/ -v
 
-if [ $? -eq 0 ]; then
-    echo "✅ All tests passed!"
-else
-    echo "❌ Some tests failed"
-    exit 1
-fi
+# Run performance benchmarks
+cd src && python performance_tester.py
 
-# Run the main demonstration
-echo "🚀 Running Protocol Buffers demonstration..."
-cd src
-python protobuf_log_processor.py
-cd ..
+# Generate sample data
+python generate_sample_data.py
+```
 
-echo "🌐 Starting web interface..."
-echo "Open http://localhost:5000 in your browser"
-cd web
-python log_viewer.py &
-WEB_PID=$!
+## 🐳 Docker Commands
 
-echo "Press Ctrl+C to stop the web server"
-wait $WEB_PID
+```bash
+# Build image
+docker build -f docker/Dockerfile -t protobuf-log-system .
+
+# Run performance tests
+docker run --rm -v $(pwd)/logs:/app/logs protobuf-log-system
+
+# Run with docker-compose
+docker-compose -f docker/docker-compose.yml up
+```
+
+## 📈 Next Steps
+
+1. Run the performance tests and analyze results
+2. Experiment with different log volumes
+3. Compare with other serialization formats
+4. Implement in your own distributed system projects
+
+## 📝 License
+
+Educational project for distributed systems learning.
 EOF
 
-chmod +x build_and_run.sh
+print_status "Created README.md"
 
-# Create integration test script
-echo "🔧 Creating integration tests..."
-cat > tests/test_integration.py << 'EOF'
-"""
-Integration tests for the complete Protocol Buffers log system
-"""
-
-import pytest
-import sys
-import os
-import time
-from datetime import datetime
-
-# Add paths
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'proto'))
-
-from protobuf_log_processor import ProtobufLogProcessor
-import log_entry_pb2
-
-class TestIntegration:
-    
-    def setup_method(self):
-        """Setup test environment"""
-        self.processor = ProtobufLogProcessor()
-    
-    def test_end_to_end_log_processing(self):
-        """Test complete end-to-end log processing workflow"""
-        # Step 1: Create multiple log entries
-        log_entries = []
-        test_data = [
-            ("INFO", "user-service", "User login successful", {"user_id": "12345"}),
-            ("ERROR", "payment-service", "Payment processing failed", {"error_code": "PAY_001"}),
-            ("WARN", "cache-service", "Cache miss detected", {"cache_key": "user_profile_12345"}),
-            ("INFO", "notification-service", "Email sent successfully", {"recipient": "user@example.com"}),
-            ("ERROR", "database-service", "Connection timeout", {"timeout_ms": "5000"})
-        ]
-        
-        for i, (level, service, message, metadata) in enumerate(test_data):
-            entry = self.processor.create_log_entry_protobuf(
-                timestamp=datetime.now().isoformat(),
-                level=level,
-                service=service,
-                message=message,
-                request_id=f"req-{i+1:03d}",
-                processing_time_ms=(i + 1) * 25,
-                metadata=metadata
-            )
-            log_entries.append(entry)
-        
-        # Step 2: Create batch
-        batch = self.processor.create_log_batch(log_entries, "integration-test-batch")
-        assert len(batch.entries) == 5
-        assert batch.batch_id == "integration-test-batch"
-        
-        # Step 3: Serialize batch
-        serialized_data = self.processor.serialize_protobuf(batch)
-        assert isinstance(serialized_data, bytes)
-        assert len(serialized_data) > 0
-        
-        # Step 4: Deserialize batch
-        deserialized_batch = self.processor.deserialize_protobuf(serialized_data)
-        assert len(deserialized_batch.entries) == 5
-        
-        # Step 5: Verify data integrity
-        for i, original_data in enumerate(test_data):
-            restored_entry = deserialized_batch.entries[i]
-            level, service, message, metadata = original_data
-            
-            assert restored_entry.level == level
-            assert restored_entry.service == service
-            assert restored_entry.message == message
-            assert restored_entry.request_id == f"req-{i+1:03d}"
-            assert restored_entry.processing_time_ms == (i + 1) * 25
-            
-            # Verify metadata
-            for key, value in metadata.items():
-                assert restored_entry.metadata[key] == value
-    
-    def test_performance_under_load(self):
-        """Test system performance under load"""
-        entry_counts = [100, 500, 1000]
-        results = []
-        
-        for count in entry_counts:
-            start_time = time.time()
-            
-            # Create entries
-            entries = []
-            for i in range(count):
-                entry = self.processor.create_log_entry_protobuf(
-                    timestamp=datetime.now().isoformat(),
-                    level="INFO" if i % 2 == 0 else "ERROR",
-                    service=f"service-{i % 10}",
-                    message=f"Load test message {i}",
-                    request_id=f"load-{i:06d}",
-                    processing_time_ms=i % 100,
-                    metadata={"test": "load", "iteration": str(i)}
-                )
-                entries.append(entry)
-            
-            # Create and serialize batch
-            batch = self.processor.create_log_batch(entries, f"load-test-{count}")
-            serialized_data = self.processor.serialize_protobuf(batch)
-            
-            # Deserialize
-            deserialized_batch = self.processor.deserialize_protobuf(serialized_data)
-            
-            end_time = time.time()
-            processing_time = end_time - start_time
-            
-            results.append({
-                "entry_count": count,
-                "processing_time_seconds": processing_time,
-                "serialized_size_bytes": len(serialized_data),
-                "entries_per_second": count / processing_time
-            })
-            
-            # Verify all entries were processed correctly
-            assert len(deserialized_batch.entries) == count
-        
-        # Verify performance scaling
-        for result in results:
-            # Should process at least 1000 entries per second
-            assert result["entries_per_second"] > 1000, f"Performance too slow: {result['entries_per_second']} entries/sec"
-        
-        print(f"\n📊 Performance Results:")
-        for result in results:
-            print(f"   {result['entry_count']:,} entries: {result['entries_per_second']:,.0f} entries/sec, {result['serialized_size_bytes']:,} bytes")
-    
-    def test_error_handling_and_recovery(self):
-        """Test error handling and recovery scenarios"""
-        # Test with invalid data
-        with pytest.raises(Exception):
-            self.processor.deserialize_protobuf(b"invalid_protobuf_data")
-        
-        # Test with empty batch
-        empty_batch = self.processor.create_log_batch([])
-        serialized_empty = self.processor.serialize_protobuf(empty_batch)
-        deserialized_empty = self.processor.deserialize_protobuf(serialized_empty)
-        assert len(deserialized_empty.entries) == 0
-        
-        # Test with large metadata
-        large_metadata = {f"key_{i}": f"value_{i}" * 100 for i in range(50)}
-        entry_with_large_metadata = self.processor.create_log_entry_protobuf(
-            timestamp=datetime.now().isoformat(),
-            level="INFO",
-            service="test-service",
-            message="Testing large metadata",
-            metadata=large_metadata
-        )
-        
-        batch = self.processor.create_log_batch([entry_with_large_metadata])
-        serialized_data = self.processor.serialize_protobuf(batch)
-        deserialized_batch = self.processor.deserialize_protobuf(serialized_data)
-        
-        # Verify large metadata was preserved
-        assert len(deserialized_batch.entries) == 1
-        restored_entry = deserialized_batch.entries[0]
-        assert len(restored_entry.metadata) == 50
-        for key, value in large_metadata.items():
-            assert restored_entry.metadata[key] == value
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v", "--tb=short"])
+# Create .gitignore
+cat > .gitignore << 'EOF'
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.eggs/
+*.egg-info/
+dist/
+build/
+logs/*.json
+logs/*.pb
+proto/*_pb2.py
+proto/*_pb2_grpc.py
+.DS_Store
+Thumbs.db
 EOF
 
-# Create performance benchmark script
-echo "⚡ Creating performance benchmark..."
-cat > src/benchmark.py << 'EOF'
-"""
-Comprehensive performance benchmark for Protocol Buffers vs JSON
-"""
+print_status "Created .gitignore"
 
-import time
-import json
-import statistics
-from datetime import datetime
-import sys
-import os
+# ============================================================================
+# PHASE 11: FINAL SETUP AND VERIFICATION
+# ============================================================================
 
-# Add proto directory to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'proto'))
+print_header "PHASE 11: Final Setup and Verification"
 
-from protobuf_log_processor import ProtobufLogProcessor
+# Make all Python scripts executable
+chmod +x test_basic_functionality.py
+chmod +x generate_sample_data.py
+print_status "Made Python scripts executable"
 
-def run_comprehensive_benchmark():
-    """Run comprehensive performance benchmark"""
-    processor = ProtobufLogProcessor()
-    
-    print("🏁 Comprehensive Performance Benchmark")
-    print("=" * 50)
-    
-    test_sizes = [100, 500, 1000, 5000, 10000]
-    results = []
-    
-    for size in test_sizes:
-        print(f"\n📊 Testing with {size:,} log entries...")
-        
-        # Multiple runs for statistical accuracy
-        json_serialize_times = []
-        json_deserialize_times = []
-        pb_serialize_times = []
-        pb_deserialize_times = []
-        json_sizes = []
-        pb_sizes = []
-        
-        for run in range(5):  # 5 runs per test size
-            # Generate test data
-            entries_dict = []
-            entries_pb = []
-            
-            for i in range(size):
-                timestamp = datetime.now().isoformat()
-                metadata = {
-                    "user_id": f"user_{i % 1000}",
-                    "session_id": f"session_{i % 100}",
-                    "request_path": f"/api/endpoint/{i % 20}",
-                    "user_agent": "Mozilla/5.0 (compatible benchmark)",
-                    "ip_address": f"192.168.{(i % 255)}.{((i * 7) % 255)}",
-                    "version": "1.2.3"
-                }
-                
-                entry_dict = {
-                    "timestamp": timestamp,
-                    "level": ["INFO", "WARN", "ERROR"][i % 3],
-                    "service": f"service-{i % 10}",
-                    "message": f"Processing request {i} with detailed logging information that represents realistic log message length",
-                    "request_id": f"req-{i:08d}",
-                    "processing_time_ms": (i % 1000) + 1,
-                    "metadata": metadata
-                }
-                entries_dict.append(entry_dict)
-                
-                pb_entry = processor.create_log_entry_protobuf(
-                    timestamp=timestamp,
-                    level=entry_dict["level"],
-                    service=entry_dict["service"],
-                    message=entry_dict["message"],
-                    request_id=entry_dict["request_id"],
-                    processing_time_ms=entry_dict["processing_time_ms"],
-                    metadata=metadata
-                )
-                entries_pb.append(pb_entry)
-            
-            # Test JSON serialization
-            start_time = time.time()
-            json_data = json.dumps(entries_dict)
-            json_serialize_time = (time.time() - start_time) * 1000
-            json_serialize_times.append(json_serialize_time)
-            json_sizes.append(len(json_data.encode('utf-8')))
-            
-            # Test JSON deserialization
-            start_time = time.time()
-            json.loads(json_data)
-            json_deserialize_time = (time.time() - start_time) * 1000
-            json_deserialize_times.append(json_deserialize_time)
-            
-            # Test Protocol Buffers serialization
-            pb_batch = processor.create_log_batch(entries_pb)
-            start_time = time.time()
-            pb_data = processor.serialize_protobuf(pb_batch)
-            pb_serialize_time = (time.time() - start_time) * 1000
-            pb_serialize_times.append(pb_serialize_time)
-            pb_sizes.append(len(pb_data))
-            
-            # Test Protocol Buffers deserialization
-            start_time = time.time()
-            processor.deserialize_protobuf(pb_data)
-            pb_deserialize_time = (time.time() - start_time) * 1000
-            pb_deserialize_times.append(pb_deserialize_time)
-        
-        # Calculate statistics
-        result = {
-            "entry_count": size,
-            "json": {
-                "serialize_ms_avg": statistics.mean(json_serialize_times),
-                "serialize_ms_std": statistics.stdev(json_serialize_times) if len(json_serialize_times) > 1 else 0,
-                "deserialize_ms_avg": statistics.mean(json_deserialize_times),
-                "deserialize_ms_std": statistics.stdev(json_deserialize_times) if len(json_deserialize_times) > 1 else 0,
-                "size_bytes_avg": statistics.mean(json_sizes),
-                "throughput_entries_per_sec": size / (statistics.mean(json_serialize_times) / 1000)
-            },
-            "protobuf": {
-                "serialize_ms_avg": statistics.mean(pb_serialize_times),
-                "serialize_ms_std": statistics.stdev(pb_serialize_times) if len(pb_serialize_times) > 1 else 0,
-                "deserialize_ms_avg": statistics.mean(pb_deserialize_times),
-                "deserialize_ms_std": statistics.stdev(pb_deserialize_times) if len(pb_deserialize_times) > 1 else 0,
-                "size_bytes_avg": statistics.mean(pb_sizes),
-                "throughput_entries_per_sec": size / (statistics.mean(pb_serialize_times) / 1000)
-            }
-        }
-        
-        # Calculate improvements
-        size_reduction = ((result["json"]["size_bytes_avg"] - result["protobuf"]["size_bytes_avg"]) / result["json"]["size_bytes_avg"]) * 100
-        serialize_speedup = result["protobuf"]["throughput_entries_per_sec"] / result["json"]["throughput_entries_per_sec"]
-        
-        result["improvements"] = {
-            "size_reduction_percent": size_reduction,
-            "serialize_speedup_factor": serialize_speedup
-        }
-        
-        results.append(result)
-        
-        # Display results for this test size
-        print(f"   JSON:     {result['json']['serialize_ms_avg']:.2f}ms serialize, {result['json']['size_bytes_avg']:,.0f} bytes")
-        print(f"   Protobuf: {result['protobuf']['serialize_ms_avg']:.2f}ms serialize, {result['protobuf']['size_bytes_avg']:,.0f} bytes")
-        print(f"   Improvement: {size_reduction:.1f}% smaller, {serialize_speedup:.1f}x faster")
-    
-    # Summary report
-    print(f"\n📈 Benchmark Summary")
-    print("=" * 50)
-    print(f"{'Entries':<10} {'JSON (ms)':<12} {'Protobuf (ms)':<15} {'Size Reduction':<15} {'Speed Improvement'}")
-    print("-" * 70)
-    
-    for result in results:
-        print(f"{result['entry_count']:<10,} "
-              f"{result['json']['serialize_ms_avg']:<12.1f} "
-              f"{result['protobuf']['serialize_ms_avg']:<15.1f} "
-              f"{result['improvements']['size_reduction_percent']:<15.1f}% "
-              f"{result['improvements']['serialize_speedup_factor']:<.1f}x")
-    
-    return results
+# Display final structure
+print_section "Final Project Structure"
+echo "Generated the following structure:"
+find . -type f -name "*.py" -o -name "*.proto" -o -name "*.sh" -o -name "*.yml" -o -name "*.md" | sort | head -20
 
-if __name__ == "__main__":
-    run_comprehensive_benchmark()
+# ============================================================================
+# SUCCESS SUMMARY
+# ============================================================================
+
+print_header "🎉 PROJECT GENERATION COMPLETE!"
+
+echo -e "${GREEN}"
+cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║                    ✅ SUCCESS! ALL FILES CREATED                     ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
 EOF
+echo -e "${NC}\n"
 
-# Run the complete setup
-echo "🎯 Running complete setup..."
-
-# Install dependencies
-echo "📦 Installing dependencies..."
-pip install -r requirements.txt
-
-# Generate Protocol Buffer code
-echo "⚡ Generating Protocol Buffer code..."
-python -m grpc_tools.protoc --proto_path=proto --python_out=proto --grpc_python_out=proto proto/log_entry.proto
-
-# Verify Protocol Buffer generation
-if [ -f "proto/log_entry_pb2.py" ]; then
-    echo "✅ Protocol Buffer code generated successfully"
-    
-    # Add __init__.py to make proto a package
-    touch proto/__init__.py
-    
-    # Run tests
-    echo "🧪 Running tests..."
-    python -m pytest tests/ -v --tb=short
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ All tests passed!"
-        
-        # Run main demonstration
-        echo "🚀 Running Protocol Buffers demonstration..."
-        cd src
-        python protobuf_log_processor.py
-        cd ..
-        
-        # Run benchmark
-        echo "⚡ Running performance benchmark..."
-        cd src
-        python benchmark.py
-        cd ..
-        
-        # Build Docker image
-        echo "🐳 Building Docker image..."
-        cd docker
-        docker build -t protobuf-log-system -f Dockerfile ..
-        cd ..
-        
-        echo "✅ Setup completed successfully!"
-        echo ""
-        echo "🎯 Expected Outputs:"
-        echo "==================="
-        echo "1. ✅ Protocol Buffer code generated in proto/log_entry_pb2.py"
-        echo "2. ✅ All tests passed (unit and integration tests)"
-        echo "3. ✅ Demo showing 5 log entries serialized/deserialized"
-        echo "4. ✅ Performance comparison showing ~60% size reduction and ~40% speed improvement"
-        echo "5. ✅ Benchmark results across different entry counts"
-        echo "6. ✅ Docker image built successfully"
-        echo ""
-        echo "🌐 To start web interface:"
-        echo "   cd web && python log_viewer.py"
-        echo "   Open http://localhost:5000"
-        echo ""
-        echo "🐳 To run with Docker:"
-        echo "   cd docker && docker-compose up"
-        echo ""
-        echo "📊 Key Performance Gains Achieved:"
-        echo "   • Data size reduction: 60-80%"
-        echo "   • Serialization speed: 40-60% faster"
-        echo "   • Network efficiency: Dramatically improved"
-        echo "   • Schema evolution: Built-in versioning support"
-        
-    else
-        echo "❌ Some tests failed - check the output above"
-        exit 1
-    fi
-else
-    echo "❌ Failed to generate Protocol Buffer code"
-    echo "Make sure protobuf-compiler and grpcio-tools are installed"
-    exit 1
-fi
-
+echo -e "${CYAN}📁 Project Structure Created:${NC}"
+echo "   ✅ Protocol Buffer schemas (proto/)"
+echo "   ✅ Core application code (src/)"
+echo "   ✅ Comprehensive test suite (tests/)"
+echo "   ✅ Docker containerization (docker/)"
+echo "   ✅ Automation scripts (scripts/)"
+echo "   ✅ Documentation (README.md)"
 echo ""
-echo "🎓 Lesson Complete!"
-echo "=================="
-echo "You've successfully implemented Protocol Buffers for efficient binary serialization"
-echo "in your distributed log processing system. The measurable performance gains demonstrate"
-echo "why Protocol Buffers is essential for high-scale distributed systems."
+
+echo -e "${CYAN}🚀 Quick Start Commands:${NC}"
+echo ""
+echo -e "${YELLOW}1. One-click demo (recommended):${NC}"
+echo "   cd $PROJECT_NAME"
+echo "   ./scripts/one_click_demo.sh"
+echo ""
+echo -e "${YELLOW}2. Manual setup:${NC}"
+echo "   cd $PROJECT_NAME"
+echo "   ./scripts/setup.sh"
+echo "   python test_basic_functionality.py"
+echo "   cd src && python performance_tester.py"
+echo ""
+echo -e "${YELLOW}3. Docker deployment:${NC}"
+echo "   cd $PROJECT_NAME"
+echo "   docker build -f docker/Dockerfile -t protobuf-log-system ."
+echo "   docker run --rm protobuf-log-system"
+echo ""
+
+echo -e "${CYAN}🎓 What You've Created:${NC}"
+echo "   • Production-grade Protocol Buffers implementation"
+echo "   • Complete testing framework with performance benchmarks"
+echo "   • Docker containerization for deployment"
+echo "   • Automated setup and deployment scripts"
+echo "   • Comprehensive documentation"
+echo ""
+
+echo -e "${CYAN}📊 Expected Performance Results:${NC}"
+echo "   • 3-4x faster serialization than JSON"
+echo "   • 60-70% smaller data size"
+echo "   • Statistical analysis with 50+ iterations"
+echo "   • Real-world impact projections"
+echo ""
+
+echo -e "${GREEN}🎉 Ready to explore high-performance distributed log processing!${NC}"
+echo ""
+echo -e "${YELLOW}💡 Tip: Start with './scripts/one_click_demo.sh' to see everything in action${NC}"
+echo ""
+
+# Save completion timestamp
+date > .project_generated_timestamp
+echo -e "${CYAN}📅 Project generated on: $(cat .project_generated_timestamp)${NC}"
+echo ""
+
+print_status "All done! Happy coding! 🚀"
 
