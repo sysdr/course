@@ -29,6 +29,7 @@ class UDPLogClient:
         self.app_name = app_name
         self.socket = None
         self.sent_count = 0
+        self.sequence = 0
         
     def setup_socket(self):
         """Create the UDP socket."""
@@ -59,14 +60,16 @@ class UDPLogClient:
                 if not self.setup_socket():
                     return False
             
-            # Create a log entry in JSON format
+            # Create a log entry in JSON format (with sequence for loss detection)
             log_entry = {
+                "sequence": self.sequence,
                 "timestamp": datetime.now().isoformat(),
                 "app": self.app_name,
                 "level": level,
                 "message": message,
                 "host": socket.gethostname()
             }
+            self.sequence += 1
             
             # Convert to JSON string and encode to bytes
             log_bytes = json.dumps(log_entry).encode('utf-8')

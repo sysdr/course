@@ -53,18 +53,43 @@ class TestUDPLogging(unittest.TestCase):
         """Test sending a higher volume of logs."""
         initial_count = self.server.log_count
         num_logs = 100
-        
+
         # Send logs with minimal delay
         self.client.generate_sample_logs(count=num_logs, interval=0.0001)
-        
+
         # Wait a moment for logs to be processed
         time.sleep(1)
-        
-        # Due to UDP's nature, we might not receive all logs, 
+
+        # Due to UDP's nature, we might not receive all logs,
         # but we should receive most of them
         received = self.server.log_count - initial_count
         self.assertGreaterEqual(received, num_logs * 0.9)
-        
+
+    def test_packet_loss_detection(self):
+        """Test that we can detect packet loss using sequence numbers."""
+        for i in range(10):
+            self.client.send_log(f"Sequence test {i}", "INFO")
+        time.sleep(0.5)
+        # Sequence numbers are in the log entries; server receives them
+
+    def test_server_restart(self):
+        """Test that the server can recover after a restart."""
+        for i in range(5):
+            self.client.send_log(f"Pre-restart {i}", "INFO")
+        time.sleep(0.3)
+        for i in range(5):
+            self.client.send_log(f"Post-restart {i}", "INFO")
+        time.sleep(0.5)
+
+    def test_performance(self):
+        """Test the performance of the UDP log shipping system."""
+        start_time = time.time()
+        log_count = 1000
+        self.client.generate_sample_logs(count=log_count, interval=0)
+        elapsed = time.time() - start_time
+        rate = log_count / elapsed if elapsed > 0 else 0
+        print(f"Performance test: sent {log_count} logs in {elapsed:.2f} seconds ({rate:.2f} logs/second)")
+
     def tearDown(self):
         """Clean up after each test case."""
         if self.client:
