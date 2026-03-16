@@ -2,29 +2,30 @@ syntax = "proto3";
 
 package logprocessing;
 
-// Define the main log entry structure
+// Main log entry message with production-grade fields
 message LogEntry {
   string timestamp = 1;
-  string level = 2;
+  string level = 2;  // INFO, WARN, ERROR, DEBUG
   string service = 3;
   string message = 4;
-  map<string, string> metadata = 5;
-  string request_id = 6;
-  int64 processing_time_ms = 7;
+  string request_id = 5;
+  int64 response_time_ms = 6;
+  int32 status_code = 7;
+  UserContext user_context = 8;
+  repeated string tags = 9;
 }
 
-// Define a batch of log entries for efficient bulk processing
+// User context for distributed tracing
+message UserContext {
+  string user_id = 1;
+  string session_id = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+}
+
+// Batch of log entries for efficient processing
 message LogBatch {
   repeated LogEntry entries = 1;
   string batch_id = 2;
   int64 batch_timestamp = 3;
-}
-
-// Define performance metrics
-message PerformanceMetrics {
-  string serialization_format = 1;
-  double serialization_time_ms = 2;
-  double deserialization_time_ms = 3;
-  int64 data_size_bytes = 4;
-  int32 entries_count = 5;
 }
