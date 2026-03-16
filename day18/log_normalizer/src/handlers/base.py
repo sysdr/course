@@ -3,6 +3,8 @@ from typing import Dict, Any
 from ..models.log_entry import LogEntry
 
 class BaseHandler(ABC):
+    """Base interface for log format handlers"""
+    
     @abstractmethod
     def can_handle(self, raw_data: bytes) -> float:
         """Return confidence score (0-1) for handling this data format"""

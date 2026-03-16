@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 class LogEntry(BaseModel):
+    """Standardized log entry format"""
     timestamp: datetime
     level: str
     message: str

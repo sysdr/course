@@ -4,13 +4,11 @@ from .base import BaseHandler
 from ..models.log_entry import LogEntry
 
 class TextHandler(BaseHandler):
-    # Common log patterns
+    """Handler for plain text logs"""
+    
     PATTERNS = [
-        # Apache/Nginx style: [timestamp] level: message
         r'^\[([^\]]+)\]\s+(\w+):\s+(.+)$',
-        # Syslog style: timestamp host service[pid]: message
         r'^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\w+)\s+([^:]+):\s*(.+)$',
-        # Simple: timestamp level message
         r'^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(\w+)\s+(.+)$'
     ]
     
@@ -21,7 +19,7 @@ class TextHandler(BaseHandler):
             for pattern in self.PATTERNS:
                 if re.match(pattern, text):
                     return 0.8
-            return 0.3  # Fallback for any text
+            return 0.3
         except UnicodeDecodeError:
             return 0.0
     
@@ -46,7 +44,6 @@ class TextHandler(BaseHandler):
                         source=source
                     )
         
-        # Fallback for unstructured text
         return LogEntry(
             timestamp=datetime.now(),
             level='INFO',
@@ -68,4 +65,4 @@ class TextHandler(BaseHandler):
             except ValueError:
                 continue
         
-        return datetime.now()  # Fallback
+        return datetime.now()

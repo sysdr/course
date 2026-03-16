@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message LogEntryProto {
+  string timestamp = 1;
+  string level = 2;
+  string message = 3;
+  string source = 4;
+}

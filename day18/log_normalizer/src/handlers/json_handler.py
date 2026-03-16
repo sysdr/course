@@ -5,6 +5,8 @@ from .base import BaseHandler
 from ..models.log_entry import LogEntry
 
 class JsonHandler(BaseHandler):
+    """Handler for JSON-formatted logs"""
+    
     def can_handle(self, raw_data: bytes) -> float:
         """Check if data is valid JSON"""
         try:
@@ -18,13 +20,11 @@ class JsonHandler(BaseHandler):
         try:
             data = json.loads(raw_data.decode('utf-8'))
             
-            # Extract standard fields with fallbacks
             timestamp = self._parse_timestamp(data.get('timestamp', data.get('time', datetime.now().isoformat())))
             level = data.get('level', data.get('severity', 'INFO')).upper()
             message = data.get('message', data.get('msg', str(data)))
             source = data.get('source', data.get('service', 'unknown'))
             
-            # Everything else goes to metadata
             metadata = {k: v for k, v in data.items() 
                        if k not in ['timestamp', 'time', 'level', 'severity', 'message', 'msg', 'source', 'service']}
             

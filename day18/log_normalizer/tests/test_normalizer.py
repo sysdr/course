@@ -35,7 +35,6 @@ class TestLogNormalizer:
     
     def test_invalid_json_handling(self):
         invalid_json = b'{"incomplete": json data'
-        # Should fall back to text handler
         result = self.normalizer.normalize(invalid_json)
         assert isinstance(result, LogEntry)
     
@@ -44,6 +43,14 @@ class TestLogNormalizer:
         result = self.normalizer.normalize(data, format_hint='text')
         assert isinstance(result, LogEntry)
         assert result.message == 'Plain text that could be anything'
+    
+    def test_transform_to_json(self):
+        text_log = b'2024-01-15 10:30:00 INFO Test message'
+        result = self.normalizer.transform(text_log, 'json')
+        assert isinstance(result, bytes)
+        data = json.loads(result)
+        assert 'level' in data
+        assert 'message' in data
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

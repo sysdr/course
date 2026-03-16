@@ -1,0 +1,3 @@
+{"timestamp": "2024-01-15T10:30:00.000Z", "level": "ERROR", "message": "Payment processing failed", "service": "payment-gateway", "user_id": "user123"}
+{"timestamp": "2024-01-15T10:30:01.000Z", "level": "INFO", "message": "Order created successfully", "service": "order-service", "order_id": "order456"}
+{"timestamp": "2024-01-15T10:30:02.000Z", "level": "WARN", "message": "High response time detected", "service": "recommendation-engine", "response_time_ms": 2500}
