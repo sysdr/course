@@ -2,7 +2,8 @@ import json
 import os
 from datetime import datetime
 from typing import Dict, Any, Tuple, Optional
-from jsonschema import validate, ValidationError, draft7_format_checker
+from jsonschema import validate, ValidationError
+from jsonschema.validators import Draft7Validator
 import colorama
 from colorama import Fore, Style
 
@@ -88,7 +89,7 @@ class SchemaValidator:
             validate(
                 instance=log_data,
                 schema=self.schemas[schema_name],
-                format_checker=draft7_format_checker  # Validates formats like date-time, email, etc.
+                format_checker=Draft7Validator.FORMAT_CHECKER  # Validates formats like date-time, email, etc.
             )
             
             # If we reach here, validation succeeded

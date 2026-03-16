@@ -121,8 +121,10 @@ class JSONLogServer:
             # Enable address reuse to avoid "Address already in use" errors
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             
-            # Bind to the specified address and port
+            # Bind to the specified address and port (port 0 = let OS choose a free port)
             self.server_socket.bind((self.host, self.port))
+            if self.port == 0:
+                self.port = self.server_socket.getsockname()[1]
             
             # Start listening for connections (backlog of 5)
             self.server_socket.listen(5)

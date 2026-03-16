@@ -242,16 +242,18 @@ class TestIntegration:
     
     def setup_method(self):
         """Set up a complete test environment with server and client."""
-        # Use a non-standard port to avoid conflicts
-        self.test_port = 9999
-        
-        # Create and start the server in a separate thread
-        self.server = JSONLogServer(host="localhost", port=self.test_port)
+        # Use port 0 so the OS assigns a free port (avoids "Address already in use" in Docker/CI)
+        self.server = JSONLogServer(host="localhost", port=0)
         self.server_thread = threading.Thread(target=self.server.start, daemon=True)
         self.server_thread.start()
         
-        # Give the server time to start
-        time.sleep(0.5)
+        # Wait for server to bind and get the actual port
+        for _ in range(50):
+            time.sleep(0.1)
+            if self.server.port != 0:
+                break
+        self.test_port = self.server.port
+        assert self.test_port != 0, "Server failed to bind to a port"
         
         # Create a client
         self.client = JSONLogClient(server_host="localhost", server_port=self.test_port)

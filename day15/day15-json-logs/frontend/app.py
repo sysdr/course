@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 import json
+import random
 import socket
 import threading
 import queue
@@ -230,8 +231,6 @@ def simulate_logs():
         
         # Generate the requested number of sample logs
         for _ in range(min(count, 100)):  # Limit to prevent abuse
-            import random
-            
             sample_log = {
                 'timestamp': datetime.utcnow().isoformat(),
                 'level': random.choice(['DEBUG', 'INFO', 'WARN', 'ERROR']),
@@ -245,6 +244,11 @@ def simulate_logs():
         return jsonify({'success': True, 'generated': count})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    """Avoid 404 when browser requests favicon."""
+    return '', 204
 
 @app.route('/health')
 def health_check():

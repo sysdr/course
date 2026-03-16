@@ -391,7 +391,6 @@
             document.getElementById('valid-logs').textContent = data.stats.valid_logs || 0;
             document.getElementById('invalid-logs').textContent = data.stats.invalid_logs || 0;
             document.getElementById('error-rate').textContent = (data.stats.error_rate || 0).toFixed(1) + '%';
-            'refresh data...');
             
             // Update service activity
             document.getElementById('total-services').textContent = data.total_services || 0;
