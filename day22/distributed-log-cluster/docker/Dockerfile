@@ -21,5 +21,5 @@ RUN mkdir -p logs/node1 logs/node2 logs/node3
 # Expose ports for all nodes
 EXPOSE 5001 5002 5003
 
-# Default command
-CMD ["python", "scripts/start_cluster.py"]
+# Default command: one node per container (use start_node.py with env from docker-compose)
+CMD ["python", "scripts/start_node.py"]

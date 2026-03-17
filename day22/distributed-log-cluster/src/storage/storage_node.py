@@ -30,6 +30,20 @@ class StorageNode:
     
     def _setup_routes(self):
         """Setup Flask routes for the storage node"""
+
+        @self.app.route('/', methods=['GET'])
+        def index():
+            base = request.url_root.rstrip('/')
+            return jsonify({
+                'node_id': self.node_id,
+                'message': 'Distributed Log Storage Node',
+                'endpoints': {
+                    'health': f'{base}/health',
+                    'stats': f'{base}/stats',
+                    'write': f'{base}/write (POST)',
+                    'read': f'{base}/read/<file_path> (GET)',
+                }
+            })
         
         @self.app.route('/health', methods=['GET'])
         def health_check():
