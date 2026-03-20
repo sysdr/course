@@ -1,64 +1,86 @@
 #!/bin/bash
-
 set -e
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
 echo "🎯 Kafka Log Compaction Complete Demo"
 echo "===================================="
 
-PROJECT_DIR=$(pwd)
-
-# Check if we're in the right directory
 if [ ! -f "config.yaml" ]; then
-    echo "❌ Please run this script from the project root directory"
+    echo "❌ Run this script from the project root (config.yaml missing)."
     exit 1
 fi
 
-# Build the application first
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker is not running. Start Docker and retry."
+    exit 1
+fi
+
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+    echo "❌ docker-compose (or 'docker compose') not found."
+    exit 1
+fi
+
+compose() {
+    if command -v docker-compose &> /dev/null; then
+        docker-compose "$@"
+    else
+        docker compose "$@"
+    fi
+}
+
 echo "🔨 Building application..."
 ./scripts/build.sh
 
-# Start infrastructure
-echo "🐳 Starting Kafka infrastructure..."
-docker-compose up -d
+# Only Zookeeper + Kafka — avoids port 8080 conflict with local dashboard (compaction-app also binds 8080).
+echo "🐳 Starting Kafka infrastructure (zookeeper + kafka)..."
+compose up -d zookeeper kafka
 
-echo "⏳ Waiting for Kafka to be ready..."
-timeout=60
-while ! nc -z localhost 9092; do
+echo "⏳ Waiting for Kafka on localhost:9092..."
+timeout=90
+while ! nc -z localhost 9092 2>/dev/null; do
     sleep 2
     timeout=$((timeout - 2))
-    if [ $timeout -le 0 ]; then
+    if [ "$timeout" -le 0 ]; then
         echo "❌ Timeout waiting for Kafka"
+        compose down --remove-orphans 2>/dev/null || true
         exit 1
     fi
 done
-
 echo "✅ Kafka is ready!"
 
-# Run tests to ensure everything works
 echo "🧪 Running tests..."
 ./scripts/test.sh
 
-# Start web dashboard in background
+export PYTHONPATH="$ROOT"
 echo "🌐 Starting web dashboard..."
-./scripts/run_web.sh &
+venv/bin/python -m uvicorn src.web.dashboard_app:create_app --factory --host 0.0.0.0 --port 8080 &
 WEB_PID=$!
 
-# Wait for web dashboard
+echo "⏳ Waiting for dashboard to listen..."
 sleep 5
 
-# Run the main application
 echo "🚀 Starting main application..."
-./scripts/run_main.sh &
+venv/bin/python src/main.py &
 APP_PID=$!
 
 echo ""
 echo "🎉 Demo is running!"
 echo "📊 Web Dashboard: http://localhost:8080"
-echo "📝 Application logs will show profile state changes"
+echo "📊 API: http://localhost:8080/api/metrics"
 echo ""
-echo "Press Ctrl+C to stop the demo"
+echo "Press Ctrl+C to stop the demo (stops app processes and Docker Kafka stack)"
 
-# Wait for interrupt
-trap "echo '🛑 Stopping demo...'; kill $WEB_PID $APP_PID 2>/dev/null; ./scripts/cleanup.sh; exit 0" INT
+cleanup_demo() {
+    echo ""
+    echo "🛑 Stopping demo..."
+    kill "$WEB_PID" "$APP_PID" 2>/dev/null || true
+    ( cd "$ROOT" && compose down --remove-orphans )
+    echo "✅ Stopped."
+}
 
-wait
+trap 'cleanup_demo; exit 0' INT TERM
+
+wait "$WEB_PID" "$APP_PID" 2>/dev/null || true
+cleanup_demo
