@@ -8,6 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from load_generator import LoadGenerator
+from tcp_server import TCPLogServer
 
 @pytest.mark.asyncio
 async def test_log_generation():
@@ -22,15 +23,35 @@ async def test_log_generation():
 
 @pytest.mark.asyncio
 async def test_load_test_basic():
-    # Very short test to verify functionality
-    generator = LoadGenerator(target_rps=10, duration=2, num_workers=1)
-    
-    results = await generator.run_load_test()
-    
-    assert results['logs_sent'] >= 0
-    assert results['actual_rps'] >= 0
-    assert 0 <= results['success_rate'] <= 100
-    assert results['duration'] >= 1.5  # Should run for close to specified duration
+    # Local server (plain TCP) so the test does not depend on port 8888 or TLS
+    port = 10010
+    server = TCPLogServer(port=port, use_tls=False)
+    server_task = asyncio.create_task(server.start_server())
+    await asyncio.sleep(0.5)
+    try:
+        generator = LoadGenerator(
+            target_rps=10,
+            duration=2,
+            num_workers=1,
+            use_tls=False,
+            server_port=port,
+        )
+        results = await generator.run_load_test()
+
+        assert results["logs_sent"] >= 0
+        assert results["actual_rps"] >= 0
+        assert 0 <= results["success_rate"] <= 100
+        assert results["duration"] >= 1.5
+    finally:
+        await server.shutdown()
+        try:
+            await asyncio.wait_for(server_task, timeout=10.0)
+        except asyncio.TimeoutError:
+            server_task.cancel()
+            try:
+                await server_task
+            except asyncio.CancelledError:
+                pass
 
 # tests/test_integration.py
 import pytest
@@ -42,7 +63,6 @@ import os
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from tcp_server import TCPLogServer
 from log_shipper import LogShipper
 
 @pytest.mark.asyncio
@@ -69,13 +89,16 @@ async def test_server_startup():
         success = False
     
     # Cleanup
-    server.running = False
-    server_task.cancel()
+    await server.shutdown()
     try:
-        await server_task
-    except asyncio.CancelledError:
-        pass
-    
+        await asyncio.wait_for(server_task, timeout=10.0)
+    except asyncio.TimeoutError:
+        server_task.cancel()
+        try:
+            await server_task
+        except asyncio.CancelledError:
+            pass
+
     assert success, "Server should be reachable on port 9999"
 
 @pytest.mark.asyncio
@@ -117,14 +140,16 @@ async def test_shipper_connection():
         print(f"Test error: {e}")
         success = False
     finally:
-        # Cleanup
-        server.running = False
-        server_task.cancel()
+        await server.shutdown()
         try:
-            await server_task
-        except asyncio.CancelledError:
-            pass
-    
+            await asyncio.wait_for(server_task, timeout=10.0)
+        except asyncio.TimeoutError:
+            server_task.cancel()
+            try:
+                await server_task
+            except asyncio.CancelledError:
+                pass
+
     assert success, "Should be able to connect and send logs"
 
 if __name__ == "__main__":

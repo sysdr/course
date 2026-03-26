@@ -42,11 +42,15 @@ async def test_basic_connection():
         assert False, f"Connection test failed: {e}"
         
     finally:
-        task.cancel()
+        await server.shutdown()
         try:
-            await task
-        except asyncio.CancelledError:
-            pass
+            await asyncio.wait_for(task, timeout=10.0)
+        except asyncio.TimeoutError:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

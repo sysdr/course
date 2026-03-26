@@ -17,10 +17,21 @@ except ImportError:
     sys.exit(1)
 
 class LoadGenerator:
-    def __init__(self, target_rps=1000, duration=60, num_workers=10):
+    def __init__(
+        self,
+        target_rps=1000,
+        duration=60,
+        num_workers=10,
+        use_tls=True,
+        server_host="localhost",
+        server_port=8888,
+    ):
         self.target_rps = target_rps
         self.duration = duration
         self.num_workers = num_workers
+        self.use_tls = use_tls
+        self.server_host = server_host
+        self.server_port = server_port
         self.logs_sent = 0
         self.errors = 0
         self.start_time = None
@@ -54,7 +65,13 @@ class LoadGenerator:
     
     async def worker(self, worker_id):
         # Create dedicated shipper for this worker
-        shipper = LogShipper(batch_size=20, batch_interval=0.5, use_tls=False)
+        shipper = LogShipper(
+            server_host=self.server_host,
+            server_port=self.server_port,
+            batch_size=20,
+            batch_interval=0.5,
+            use_tls=self.use_tls,
+        )
         
         if not await shipper.start():
             print(f"Worker {worker_id}: Failed to connect")
@@ -110,7 +127,10 @@ class LoadGenerator:
         # Final stats
         elapsed = time.time() - self.start_time
         actual_rps = self.logs_sent / elapsed if elapsed > 0 else 0
-        success_rate = ((self.logs_sent - self.errors) / max(self.logs_sent, 1)) * 100
+        if self.logs_sent > 0:
+            success_rate = ((self.logs_sent - self.errors) / self.logs_sent) * 100
+        else:
+            success_rate = 0.0
         
         print(f"\n=== LOAD TEST RESULTS ===")
         print(f"Duration: {elapsed:.2f}s")
@@ -148,12 +168,16 @@ class LoadGenerator:
             last_count = self.logs_sent
 
 async def main():
-    # Parse command line arguments
-    target_rps = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-    duration = int(sys.argv[2]) if len(sys.argv) > 2 else 10
-    workers = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-    
-    generator = LoadGenerator(target_rps=target_rps, duration=duration, num_workers=workers)
+    # Args: [rps] [duration] [workers] [--no-tls] (order after numeric args is flexible)
+    args = [a for a in sys.argv[1:] if a != "--no-tls"]
+    use_tls = "--no-tls" not in sys.argv[1:]
+    target_rps = int(args[0]) if len(args) > 0 else 100
+    duration = int(args[1]) if len(args) > 1 else 10
+    workers = int(args[2]) if len(args) > 2 else 5
+
+    generator = LoadGenerator(
+        target_rps=target_rps, duration=duration, num_workers=workers, use_tls=use_tls
+    )
     results = await generator.run_load_test()
     
     # Save results to file

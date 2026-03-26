@@ -24,10 +24,19 @@ async def test_server_starts():
         writer.close()
         await writer.wait_closed()
         success = True
-    except:
+    except Exception:
         success = False
-    
-    task.cancel()
+    finally:
+        await server.shutdown()
+        try:
+            await asyncio.wait_for(task, timeout=10.0)
+        except asyncio.TimeoutError:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
     assert success
 
 @pytest.mark.asyncio
@@ -46,7 +55,15 @@ async def test_client_connects():
             await shipper.close()
         assert connected
     finally:
-        task.cancel()
+        await server.shutdown()
+        try:
+            await asyncio.wait_for(task, timeout=10.0)
+        except asyncio.TimeoutError:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 @pytest.mark.asyncio
 async def test_send_logs():
@@ -68,9 +85,17 @@ async def test_send_logs():
             
             await asyncio.sleep(0.5)
             assert server.metrics.logs_received >= 0
-            
+
     finally:
-        task.cancel()
+        await server.shutdown()
+        try:
+            await asyncio.wait_for(task, timeout=10.0)
+        except asyncio.TimeoutError:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

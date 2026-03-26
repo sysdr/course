@@ -43,7 +43,14 @@ class TCPLogServer:
         self.metrics = LogMetrics()
         self.clients = set()
         self.running = True
-        
+        self._async_server = None
+
+    async def shutdown(self):
+        """Stop accepting connections so serve_forever() can exit."""
+        self.running = False
+        if self._async_server is not None:
+            self._async_server.close()
+
     async def handle_client(self, reader, writer):
         client_addr = writer.get_extra_info('peername')
         self.clients.add(writer)
@@ -121,16 +128,17 @@ class TCPLogServer:
                 return
             
         try:
-            server = await asyncio.start_server(
-                self.handle_client, 
-                self.host, 
+            self._async_server = await asyncio.start_server(
+                self.handle_client,
+                self.host,
                 self.port,
-                ssl=context
+                ssl=context,
             )
+            server = self._async_server
         except Exception as e:
             print(f"Failed to start server: {e}")
             return
-        
+
         print(f"TCP Server listening on {self.host}:{self.port} (TLS: {self.use_tls})")
         
         # Start stats reporter
@@ -138,7 +146,11 @@ class TCPLogServer:
         
         try:
             async with server:
-                await server.serve_forever()
+                try:
+                    await server.serve_forever()
+                except asyncio.CancelledError:
+                    # Normal when Server.close() stops serve_forever (e.g. tests / shutdown())
+                    pass
         except KeyboardInterrupt:
             print("Server shutting down...")
         finally:
