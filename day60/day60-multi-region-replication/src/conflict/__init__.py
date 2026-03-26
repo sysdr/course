@@ -1,0 +1,2 @@
+"""Conflict resolution package."""
+
