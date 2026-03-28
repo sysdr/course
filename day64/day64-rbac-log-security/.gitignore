@@ -1,0 +1,42 @@
+# Secrets
+backend/config/.env
+.env
+*.pem
+
+# Python
+backend/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Node / React
+frontend/node_modules/
+frontend/build/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Logs & runtime
+logs/
+*.log
+.backend.pid
+.frontend.pid
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+*.local.env
