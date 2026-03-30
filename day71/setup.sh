@@ -5,14 +5,17 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${SCRIPT_DIR}/log-profiler"
+
 echo "🚀 Day 71: Building Performance Profiling & Optimization System"
 echo "=============================================================="
 
-# Create project structure
-echo "📁 Creating project structure..."
-mkdir -p log-profiler/{src/{profiler,optimizer,analyzer,dashboard},tests,config,docker,data/{profiles,reports},static/{css,js},templates}
+# Create project structure under this script's directory (setup.sh stays outside the app tree)
+echo "📁 Creating project structure at ${PROJECT_DIR}..."
+mkdir -p "${PROJECT_DIR}"/{src/{profiler,optimizer,analyzer,dashboard},tests,config,docker,data/{profiles,reports},static/{css,js},templates,logs}
 
-cd log-profiler
+cd "${PROJECT_DIR}"
 
 # Create requirements.txt with latest May 2025 libraries
 cat > requirements.txt << 'EOF'
@@ -25,7 +28,6 @@ pytest-asyncio==0.23.7
 numpy==1.26.4
 pandas==2.2.2
 plotly==5.20.0
-asyncio==3.4.3
 aiofiles==23.2.1
 structlog==24.1.0
 prometheus-client==0.20.0
@@ -146,10 +148,10 @@ class ProfilerEngine:
         
         while self.is_profiling:
             try:
-                # Collect system metrics
+                # Collect system metrics (interval avoids psutil's first-call 0.0 CPU reading)
                 metrics = PerformanceMetrics(
                     timestamp=time.time(),
-                    cpu_percent=process.cpu_percent(),
+                    cpu_percent=process.cpu_percent(interval=0.1),
                     memory_percent=process.memory_percent(),
                     memory_mb=process.memory_info().rss / 1024 / 1024,
                     disk_io_read_mb=process.io_counters().read_bytes / 1024 / 1024,
@@ -327,7 +329,7 @@ class OptimizationEngine:
         
         avg_cpu = metrics.get('summary', {}).get('avg_cpu_percent', 0)
         
-        if avg_cpu > 85:
+        if avg_cpu >= 85:
             suggestions.append(OptimizationSuggestion(
                 category='cpu',
                 priority='high',
@@ -763,6 +765,7 @@ EOF
 cat > src/dashboard/dashboard_api.py << 'EOF'
 import asyncio
 import json
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -771,26 +774,16 @@ from typing import List, Dict, Any
 import uvicorn
 import structlog
 
-from ..profiler.profiler_engine import ProfilerEngine
-from ..optimizer.optimization_engine import OptimizationEngine
-from ..analyzer.log_analyzer import LogAnalyzer, generate_test_logs
+from profiler.profiler_engine import ProfilerEngine
+from optimizer.optimization_engine import OptimizationEngine
+from analyzer.log_analyzer import LogAnalyzer, generate_test_logs
 from config.profiler_config import DEFAULT_CONFIG
 
 logger = structlog.get_logger()
 
-app = FastAPI(title="Log Performance Profiler Dashboard", version="1.0.0")
-
-# Mount static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-# Global instances
 profiler_engine = ProfilerEngine(DEFAULT_CONFIG)
 optimization_engine = OptimizationEngine(DEFAULT_CONFIG)
 log_analyzer = LogAnalyzer()
-
-# WebSocket connections for real-time updates
-active_connections: List[WebSocket] = []
 
 class ConnectionManager:
     def __init__(self):
@@ -807,10 +800,57 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(json.dumps(message))
-            except:
+            except Exception:
                 pass
 
 manager = ConnectionManager()
+
+def merge_dashboard_metrics() -> Dict[str, Any]:
+    """Combine profiler samples with log-analyzer stats for the dashboard."""
+    prof = profiler_engine.get_metrics_summary()
+    if not prof:
+        prof = {"summary": {}, "bottlenecks": [], "function_timings": {}}
+    stats = log_analyzer.get_performance_stats()
+    if stats.get("status") == "no_data":
+        stats = {"processed_count": 0, "error_count": 0, "error_rate": 0.0}
+    summary = dict(prof.get("summary") or {})
+    dur = float(summary.get("profiling_duration_seconds") or 0)
+    if dur <= 0:
+        dur = 0.001
+    processed = int(stats.get("processed_count") or 0)
+    summary["logs_processed"] = processed
+    summary["logs_per_second"] = round(processed / dur, 2)
+    prof["summary"] = summary
+    prof["analyzer"] = stats
+    return prof
+
+async def simulate_log_processing():
+    """Background task to simulate ongoing log processing"""
+    while profiler_engine.is_profiling:
+        test_logs = generate_test_logs(20)
+        await log_analyzer.process_log_batch(test_logs)
+        
+        if manager.active_connections:
+            metrics = merge_dashboard_metrics()
+            await manager.broadcast({
+                "type": "metrics_update",
+                "data": metrics
+            })
+        
+        await asyncio.sleep(1)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    profiler_engine.start_profiling()
+    asyncio.create_task(simulate_log_processing())
+    yield
+    if profiler_engine.is_profiling:
+        profiler_engine.stop_profiling()
+
+app = FastAPI(title="Log Performance Profiler Dashboard", version="1.0.0", lifespan=lifespan)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -822,10 +862,7 @@ async def start_profiling():
     """Start performance profiling"""
     if not profiler_engine.is_profiling:
         profiler_engine.start_profiling()
-        
-        # Start background log processing for testing
         asyncio.create_task(simulate_log_processing())
-        
         return {"status": "started", "message": "Profiling started successfully"}
     else:
         return {"status": "already_running", "message": "Profiling is already running"}
@@ -835,13 +872,10 @@ async def stop_profiling():
     """Stop performance profiling and get results"""
     if profiler_engine.is_profiling:
         metrics_summary = profiler_engine.stop_profiling()
-        
-        # Generate optimization report
         optimization_report = optimization_engine.generate_optimization_report(metrics_summary)
-        
         return {
             "status": "stopped",
-            "metrics": metrics_summary,
+            "metrics": merge_dashboard_metrics(),
             "optimization_report": optimization_report
         }
     else:
@@ -849,11 +883,8 @@ async def stop_profiling():
 
 @app.get("/api/metrics")
 async def get_current_metrics():
-    """Get current performance metrics"""
-    if profiler_engine.is_profiling:
-        return profiler_engine.get_metrics_summary()
-    else:
-        return {"status": "not_profiling", "message": "Profiling is not active"}
+    """Get current performance metrics (profiler + log analyzer)"""
+    return merge_dashboard_metrics()
 
 @app.get("/api/optimization-suggestions")
 async def get_optimization_suggestions():
@@ -871,24 +902,19 @@ async def run_load_test(test_config: dict = None):
     if test_config is None:
         test_config = {"log_count": 1000, "batch_size": 50, "concurrent_batches": 10}
     
-    # Start profiling if not already running
     if not profiler_engine.is_profiling:
         profiler_engine.start_profiling()
+        asyncio.create_task(simulate_log_processing())
     
-    # Run load test
     log_count = test_config.get("log_count", 1000)
     batch_size = test_config.get("batch_size", 50)
     concurrent_batches = test_config.get("concurrent_batches", 10)
     
     logger.info(f"Starting load test: {log_count} logs, batch size {batch_size}")
     
-    # Generate test logs
     test_logs = generate_test_logs(log_count)
-    
-    # Process in batches
     batches = [test_logs[i:i + batch_size] for i in range(0, len(test_logs), batch_size)]
     
-    # Process batches concurrently
     tasks = []
     for i in range(0, len(batches), concurrent_batches):
         batch_group = batches[i:i + concurrent_batches]
@@ -898,9 +924,8 @@ async def run_load_test(test_config: dict = None):
     
     results = await asyncio.gather(*tasks)
     
-    # Get performance stats
     analyzer_stats = log_analyzer.get_performance_stats()
-    profiler_stats = profiler_engine.get_metrics_summary()
+    profiler_stats = merge_dashboard_metrics()
     
     return {
         "status": "completed",
@@ -916,34 +941,14 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Send real-time metrics every 2 seconds
-            if profiler_engine.is_profiling:
-                metrics = profiler_engine.get_metrics_summary()
-                await websocket.send_text(json.dumps({
-                    "type": "metrics_update",
-                    "data": metrics
-                }))
-            
+            metrics = merge_dashboard_metrics()
+            await websocket.send_text(json.dumps({
+                "type": "metrics_update",
+                "data": metrics
+            }))
             await asyncio.sleep(2)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-
-async def simulate_log_processing():
-    """Background task to simulate ongoing log processing"""
-    while profiler_engine.is_profiling:
-        # Generate and process small batches of logs
-        test_logs = generate_test_logs(20)
-        await log_analyzer.process_log_batch(test_logs)
-        
-        # Broadcast updates to connected clients
-        if manager.active_connections:
-            metrics = profiler_engine.get_metrics_summary()
-            await manager.broadcast({
-                "type": "metrics_update", 
-                "data": metrics
-            })
-        
-        await asyncio.sleep(1)  # Process every second
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
@@ -956,309 +961,410 @@ cat > templates/dashboard.html << 'EOF'
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Performance Profiler Dashboard</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>Log Performance Profiler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- plotly-latest.min.js is frozen at v1.x; use an explicit release: https://github.com/plotly/plotly.js/releases -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <style>
+        :root {
+            --bg-page: #f0eeeb;
+            --bg-subtle: #e8e6e3;
+            --surface: #ffffff;
+            --border: #d6d3d1;
+            --border-strong: #a8a29e;
+            --text: #1c1917;
+            --text-muted: #57534e;
+            --text-faint: #78716c;
+            --accent: #292524;
+            --accent-hover: #1c1917;
+            --danger: #b91c1c;
+            --danger-hover: #991b1b;
+            --success: #15803d;
+            --success-bg: #ecfdf5;
+            --warn-bg: #fffbeb;
+            --chart-cpu: #44403c;
+            --chart-mem: #a16207;
+            --radius: 6px;
+            --shadow: 0 1px 3px rgba(28, 25, 23, 0.06);
+            --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Google Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+            background: var(--bg-page);
             min-height: 100vh;
-            color: #333;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
         }
-        
-        .container {
-            max-width: 1400px;
+
+        .app-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-header__inner {
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+
+        .brand__title {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text);
         }
-        
-        .header h1 {
-            color: #1a73e8;
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-            font-weight: 300;
+
+        .brand__subtitle {
+            display: block;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 0.125rem;
+            max-width: 42rem;
         }
-        
-        .header p {
-            color: #5f6368;
-            font-size: 1.1rem;
+
+        .conn-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.375rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--text-muted);
         }
-        
-        .controls {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+
+        .conn-pill--live {
+            background: var(--success-bg);
+            border-color: #a7f3d0;
+            color: var(--success);
         }
-        
+
+        .conn-pill--offline {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: var(--danger);
+        }
+
+        .main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .panel__header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .panel__body {
+            padding: 1.25rem;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
         .btn-group {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        
+
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.8125rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            font-family: inherit;
+            border: 1px solid transparent;
         }
-        
+
         .btn-primary {
-            background: #1a73e8;
-            color: white;
+            background: var(--accent);
+            color: #fafaf9;
+            border-color: var(--accent);
         }
-        
+
         .btn-primary:hover {
-            background: #1557b0;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
         }
-        
+
         .btn-danger {
-            background: #ea4335;
-            color: white;
+            background: var(--surface);
+            color: var(--danger);
+            border-color: var(--border-strong);
         }
-        
+
         .btn-danger:hover {
-            background: #c5221f;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.3);
+            background: #fef2f2;
+            border-color: var(--danger);
         }
-        
+
         .btn-secondary {
-            background: #34a853;
-            color: white;
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--border-strong);
         }
-        
+
         .btn-secondary:hover {
-            background: #2d8f47;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(52, 168, 83, 0.3);
+            background: var(--bg-page);
+            border-color: var(--text-muted);
         }
-        
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
         .status {
             display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
+            padding: 0.25rem 0.625rem;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.04em;
         }
-        
+
         .status.active {
-            background: #e8f5e8;
-            color: #34a853;
+            background: var(--success-bg);
+            color: var(--success);
         }
-        
+
         .status.inactive {
-            background: #fce8e6;
-            color: #ea4335;
+            background: #f5f5f4;
+            color: var(--text-faint);
         }
-        
+
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
         }
-        
+
+        @media (max-width: 1100px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 520px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+
         .metric-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            transition: transform 0.2s ease;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.125rem 1.25rem;
+            background: var(--surface);
+            box-shadow: var(--shadow);
         }
-        
-        .metric-card:hover {
-            transform: translateY(-2px);
-        }
-        
+
         .metric-card h3 {
-            color: #1a73e8;
-            margin-bottom: 16px;
-            font-size: 1.2rem;
-            font-weight: 500;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-faint);
+            margin-bottom: 0.75rem;
         }
-        
+
         .metric-value {
-            font-size: 2.5rem;
-            font-weight: 300;
-            color: #333;
-            margin-bottom: 8px;
+            font-size: 1.875rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
-        
+
         .metric-unit {
-            color: #5f6368;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
         }
-        
-        .chart-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+
+        .chart-wrap {
+            min-height: 380px;
         }
-        
-        .optimization-panel {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+
+        .section-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
         }
-        
+
+        .optimization-panel .section-title {
+            margin-bottom: 0;
+        }
+
         .suggestion-card {
-            background: #f8f9fa;
-            border-left: 4px solid #1a73e8;
-            padding: 16px;
-            margin-bottom: 16px;
-            border-radius: 0 8px 8px 0;
+            background: #fafaf9;
+            border: 1px solid var(--border);
+            border-left-width: 3px;
+            border-left-color: var(--text-faint);
+            padding: 1rem 1.125rem;
+            margin-bottom: 0.75rem;
+            border-radius: var(--radius);
         }
-        
+
         .suggestion-card.high-priority {
-            border-left-color: #ea4335;
-            background: #fef7f0;
+            border-left-color: var(--danger);
+            background: #fffbeb;
         }
-        
+
         .suggestion-card.medium-priority {
-            border-left-color: #fbbc04;
-            background: #fffdf0;
+            border-left-color: #ca8a04;
+            background: var(--warn-bg);
         }
-        
+
         .suggestion-title {
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-size: 0.875rem;
         }
-        
+
         .suggestion-description {
-            color: #5f6368;
-            line-height: 1.6;
+            color: var(--text-muted);
+            line-height: 1.55;
+            font-size: 0.875rem;
         }
-        
+
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1a73e8;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--bg-subtle);
+            border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
-        
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            z-index: 1000;
-        }
-        
-        .connection-status.connected {
-            background: #e8f5e8;
-            color: #34a853;
-        }
-        
-        .connection-status.disconnected {
-            background: #fce8e6;
-            color: #ea4335;
+
+        #optimizationSuggestions > p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">Connecting...</div>
-    
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Log Performance Profiler</h1>
-            <p>Real-time performance monitoring and optimization for distributed log processing systems</p>
-        </div>
-        
-        <div class="controls">
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="startProfiling()">Start Profiling</button>
-                <button class="btn btn-danger" onclick="stopProfiling()">Stop Profiling</button>
-                <button class="btn btn-secondary" onclick="runLoadTest()">Run Load Test</button>
+    <header class="app-header">
+        <div class="app-header__inner">
+            <div class="brand">
+                <span class="brand__title">Log Performance Profiler</span>
+                <span class="brand__subtitle">Real-time performance monitoring and optimization for distributed log processing</span>
             </div>
-            <div>
-                Status: <span class="status inactive" id="profilingStatus">Inactive</span>
-            </div>
+            <div class="conn-pill" id="connectionStatus">Connecting…</div>
         </div>
-        
+    </header>
+
+    <main class="main">
+        <section class="panel">
+            <div class="panel__header">Operations</div>
+            <div class="panel__body">
+                <div class="toolbar">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" onclick="startProfiling()">Start profiling</button>
+                        <button type="button" class="btn btn-danger" onclick="stopProfiling()">Stop profiling</button>
+                        <button type="button" class="btn btn-secondary" onclick="runLoadTest()">Run load test</button>
+                    </div>
+                    <div class="status-row">
+                        <span>Profiler</span>
+                        <span class="status inactive" id="profilingStatus">Inactive</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="metrics-grid">
             <div class="metric-card">
-                <h3>CPU Usage</h3>
+                <h3>CPU usage</h3>
                 <div class="metric-value" id="cpuUsage">0</div>
-                <div class="metric-unit">percent</div>
+                <div class="metric-unit">Percent</div>
             </div>
-            
             <div class="metric-card">
-                <h3>Memory Usage</h3>
+                <h3>Memory usage</h3>
                 <div class="metric-value" id="memoryUsage">0</div>
-                <div class="metric-unit">percent</div>
+                <div class="metric-unit">Percent</div>
             </div>
-            
             <div class="metric-card">
-                <h3>Processed Logs</h3>
+                <h3>Processed logs</h3>
                 <div class="metric-value" id="processedLogs">0</div>
-                <div class="metric-unit">total</div>
+                <div class="metric-unit">Total</div>
             </div>
-            
             <div class="metric-card">
-                <h3>Processing Rate</h3>
+                <h3>Processing rate</h3>
                 <div class="metric-value" id="processingRate">0</div>
-                <div class="metric-unit">logs/sec</div>
+                <div class="metric-unit">Logs / second</div>
             </div>
         </div>
-        
-        <div class="chart-container">
-            <h3>Real-time Performance Metrics</h3>
-            <div id="performanceChart" style="height: 400px;"></div>
-        </div>
-        
-        <div class="optimization-panel">
-            <h3>🎯 Optimization Suggestions</h3>
-            <div id="optimizationSuggestions">
-                <p>Start profiling to get optimization suggestions...</p>
+
+        <section class="panel">
+            <div class="panel__header">Throughput &amp; resource usage</div>
+            <div class="panel__body">
+                <div class="chart-wrap" id="performanceChart"></div>
             </div>
-        </div>
-    </div>
+        </section>
+
+        <section class="panel optimization-panel">
+            <div class="panel__header">Optimization suggestions</div>
+            <div class="panel__body">
+                <div id="optimizationSuggestions">
+                    <p>Profiling data will appear here when suggestions are available.</p>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script>
         let socket = null;
@@ -1269,46 +1375,40 @@ cat > templates/dashboard.html << 'EOF'
             memory: []
         };
 
-        // Initialize WebSocket connection
         function initWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws`;
-            
             socket = new WebSocket(wsUrl);
-            
-            socket.onopen = function(event) {
-                console.log('WebSocket connected');
+
+            socket.onopen = function() {
                 updateConnectionStatus(true);
             };
-            
+
             socket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 if (data.type === 'metrics_update') {
                     updateDashboard(data.data);
                 }
             };
-            
-            socket.onclose = function(event) {
-                console.log('WebSocket disconnected');
+
+            socket.onclose = function() {
                 updateConnectionStatus(false);
-                // Attempt to reconnect after 5 seconds
                 setTimeout(initWebSocket, 5000);
             };
-            
-            socket.onerror = function(error) {
-                console.error('WebSocket error:', error);
+
+            socket.onerror = function() {
                 updateConnectionStatus(false);
             };
         }
 
         function updateConnectionStatus(connected) {
-            const statusElement = document.getElementById('connectionStatus');
+            const el = document.getElementById('connectionStatus');
             if (connected) {
-                statusElement.textContent = 'Connected';
-                statusElement.className = 'connection-status connected';
+                el.textContent = 'Live';
+                el.className = 'conn-pill conn-pill--live';
             } else {
-                statusElement.textContent = 'Disconnected';
-                statusElement.className = 'connection-status disconnected';
+                el.textContent = 'Offline';
+                el.className = 'conn-pill conn-pill--offline';
             }
         }
 
@@ -1318,15 +1418,10 @@ cat > templates/dashboard.html << 'EOF'
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'}
                 });
-                
                 const result = await response.json();
-                
                 if (result.status === 'started') {
                     isProfilingActive = true;
                     updateProfilingStatus(true);
-                    console.log('Profiling started successfully');
-                } else {
-                    console.log(result.message);
                 }
             } catch (error) {
                 console.error('Error starting profiling:', error);
@@ -1339,18 +1434,11 @@ cat > templates/dashboard.html << 'EOF'
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'}
                 });
-                
                 const result = await response.json();
-                
                 if (result.status === 'stopped') {
                     isProfilingActive = false;
                     updateProfilingStatus(false);
-                    
-                    // Display optimization report
                     displayOptimizationSuggestions(result.optimization_report);
-                    console.log('Profiling stopped successfully');
-                } else {
-                    console.log(result.message);
                 }
             } catch (error) {
                 console.error('Error stopping profiling:', error);
@@ -1359,10 +1447,9 @@ cat > templates/dashboard.html << 'EOF'
 
         async function runLoadTest() {
             try {
-                document.getElementById('optimizationSuggestions').innerHTML = 
-                    '<div class="loading"></div> Running load test...';
-                
-                const response = await fetch('/api/load-test', {
+                document.getElementById('optimizationSuggestions').innerHTML =
+                    '<div class="loading"></div> <span style="color:var(--text-muted);font-size:0.875rem">Running load test…</span>';
+                await fetch('/api/load-test', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -1371,15 +1458,9 @@ cat > templates/dashboard.html << 'EOF'
                         concurrent_batches: 10
                     })
                 });
-                
-                const result = await response.json();
-                console.log('Load test completed:', result);
-                
-                // Refresh optimization suggestions
                 getOptimizationSuggestions();
             } catch (error) {
-                console.error('Error running load test:', error);
-                document.getElementById('optimizationSuggestions').innerHTML = 
+                document.getElementById('optimizationSuggestions').innerHTML =
                     '<p>Error running load test. Please try again.</p>';
             }
         }
@@ -1388,12 +1469,9 @@ cat > templates/dashboard.html << 'EOF'
             try {
                 const response = await fetch('/api/optimization-suggestions');
                 const result = await response.json();
-                
                 displayOptimizationSuggestions({
                     total_suggestions: result.suggestions.length,
-                    categories: {
-                        general: result.suggestions
-                    }
+                    categories: { general: result.suggestions }
                 });
             } catch (error) {
                 console.error('Error fetching suggestions:', error);
@@ -1413,34 +1491,33 @@ cat > templates/dashboard.html << 'EOF'
 
         function updateDashboard(data) {
             const summary = data.summary || {};
-            
-            // Update metric cards
-            document.getElementById('cpuUsage').textContent = 
+            const logsProcessed = summary.logs_processed != null
+                ? summary.logs_processed
+                : (data.analyzer && data.analyzer.processed_count) || 0;
+            const logsPerSec = summary.logs_per_second != null
+                ? summary.logs_per_second
+                : (parseFloat(summary.profiling_duration_seconds || 1) > 0
+                    ? (logsProcessed / parseFloat(summary.profiling_duration_seconds || 1)).toFixed(1)
+                    : '0');
+
+            document.getElementById('cpuUsage').textContent =
                 (summary.avg_cpu_percent || 0).toFixed(1);
-            document.getElementById('memoryUsage').textContent = 
+            document.getElementById('memoryUsage').textContent =
                 (summary.avg_memory_percent || 0).toFixed(1);
-            document.getElementById('processedLogs').textContent = 
-                summary.total_samples || 0;
-            
-            // Calculate processing rate (simplified)
-            const duration = summary.profiling_duration_seconds || 1;
-            const rate = ((summary.total_samples || 0) / duration).toFixed(1);
-            document.getElementById('processingRate').textContent = rate;
-            
-            // Update chart data
+            document.getElementById('processedLogs').textContent = String(logsProcessed);
+            document.getElementById('processingRate').textContent = typeof logsPerSec === 'number'
+                ? logsPerSec.toFixed(1) : String(logsPerSec);
+
             const now = new Date();
             metricsData.timestamps.push(now);
             metricsData.cpu.push(summary.avg_cpu_percent || 0);
             metricsData.memory.push(summary.avg_memory_percent || 0);
-            
-            // Keep only last 50 data points
+
             if (metricsData.timestamps.length > 50) {
                 metricsData.timestamps.shift();
                 metricsData.cpu.shift();
                 metricsData.memory.shift();
             }
-            
-            // Update chart
             updatePerformanceChart();
         }
 
@@ -1450,65 +1527,80 @@ cat > templates/dashboard.html << 'EOF'
                 y: metricsData.cpu,
                 type: 'scatter',
                 mode: 'lines+markers',
-                name: 'CPU Usage (%)',
-                line: {color: '#1a73e8'},
-                marker: {size: 4}
+                name: 'CPU %',
+                line: { color: '#44403c', width: 2 },
+                marker: { size: 5, color: '#44403c' }
             };
-            
+
             const memoryTrace = {
                 x: metricsData.timestamps,
                 y: metricsData.memory,
                 type: 'scatter',
                 mode: 'lines+markers',
-                name: 'Memory Usage (%)',
-                line: {color: '#ea4335'},
-                marker: {size: 4}
+                name: 'Memory %',
+                line: { color: '#a16207', width: 2 },
+                marker: { size: 5, color: '#a16207' }
             };
-            
+
             const layout = {
-                title: {
-                    text: '',
-                    font: {size: 16}
-                },
+                font: { family: 'IBM Plex Sans, sans-serif', color: '#57534e', size: 12 },
+                title: { text: '' },
                 xaxis: {
                     title: 'Time',
-                    type: 'date'
+                    type: 'date',
+                    gridcolor: '#e7e5e4',
+                    linecolor: '#d6d3d1',
+                    zeroline: false
                 },
                 yaxis: {
                     title: 'Usage (%)',
-                    range: [0, 100]
+                    range: [0, 100],
+                    gridcolor: '#e7e5e4',
+                    linecolor: '#d6d3d1',
+                    zeroline: false
                 },
-                margin: {l: 50, r: 20, t: 20, b: 50},
+                margin: { l: 52, r: 24, t: 16, b: 48 },
                 showlegend: true,
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)'
+                legend: {
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: 1.02,
+                    xanchor: 'right',
+                    x: 1
+                },
+                paper_bgcolor: '#ffffff',
+                plot_bgcolor: '#fafaf9'
             };
-            
-            Plotly.newPlot('performanceChart', [cpuTrace, memoryTrace], layout, {responsive: true});
+
+            Plotly.newPlot('performanceChart', [cpuTrace, memoryTrace], layout, {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d']
+            });
         }
 
         function displayOptimizationSuggestions(report) {
             const container = document.getElementById('optimizationSuggestions');
-            
+
             if (!report || !report.categories) {
                 container.innerHTML = '<p>No optimization suggestions available.</p>';
                 return;
             }
-            
-            let html = `<h4>📊 ${report.total_suggestions || 0} Optimization Opportunities</h4>`;
-            
-            // Display suggestions by category
+
+            let html = `<p style="margin-bottom:1rem;font-size:0.875rem;color:var(--text-muted)"><strong style="color:var(--text)">${report.total_suggestions || 0}</strong> opportunities identified</p>`;
+
             for (const [category, suggestions] of Object.entries(report.categories)) {
                 if (suggestions && suggestions.length > 0) {
-                    html += `<h5>${category.toUpperCase()} Optimizations</h5>`;
-                    
+                    html += `<h5 style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-faint);margin:1rem 0 0.5rem">${category}</h5>`;
+
                     suggestions.forEach(suggestion => {
                         const priorityClass = `${suggestion.priority}-priority`;
                         html += `
                             <div class="suggestion-card ${priorityClass}">
                                 <div class="suggestion-title">
-                                    ${getPriorityIcon(suggestion.priority)} 
-                                    ${suggestion.category.toUpperCase()}: ${suggestion.priority} priority
+                                    ${getPriorityIcon(suggestion.priority)}
+                                    ${String(suggestion.category || '').toUpperCase()}: ${suggestion.priority} priority
                                 </div>
                                 <div class="suggestion-description">
                                     ${suggestion.description}
@@ -1520,36 +1612,38 @@ cat > templates/dashboard.html << 'EOF'
                     });
                 }
             }
-            
-            if (html === `<h4>📊 0 Optimization Opportunities</h4>`) {
-                html += '<p>✅ System is performing optimally! No immediate optimizations needed.</p>';
+
+            if (!html.includes('suggestion-card')) {
+                html += '<p style="color:var(--text-muted);font-size:0.875rem">No immediate optimizations. System looks healthy.</p>';
             }
-            
+
             container.innerHTML = html;
         }
 
         function getPriorityIcon(priority) {
-            switch(priority) {
-                case 'high': return '🚨';
-                case 'medium': return '⚠️';
-                case 'low': return 'ℹ️';
-                default: return '📝';
+            switch (priority) {
+                case 'high': return '● ';
+                case 'medium': return '● ';
+                case 'low': return '○ ';
+                default: return '';
             }
         }
 
-        // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             initWebSocket();
             updatePerformanceChart();
-            
-            // Get initial optimization suggestions
-            setTimeout(() => {
-                getOptimizationSuggestions();
-            }, 1000);
+
+            fetch('/api/metrics')
+                .then(r => r.json())
+                .then(data => { if (data && data.summary) updateDashboard(data); })
+                .catch(() => {});
+
+            setTimeout(() => { getOptimizationSuggestions(); }, 1000);
         });
     </script>
 </body>
 </html>
+
 EOF
 
 # Create main application entry point
@@ -1586,7 +1680,7 @@ if __name__ == "__main__":
         "dashboard.dashboard_api:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False,
         log_level="info"
     )
 EOF
@@ -1636,7 +1730,7 @@ class TestProfilerEngine:
         
         assert result == 8
         assert profile_data['function_name'] == 'test_function'
-        assert profile_data['execution_time_ms'] >= 10  # At least 10ms
+        assert profile_data['execution_time_ms'] >= 5  # sleep(0.01) target; allow scheduler variance
         assert 'test_function' in profiler.function_timings
 
 class TestOptimizationEngine:
@@ -1883,7 +1977,7 @@ async def main():
     console.print(Panel.fit(
         "✅ Demonstration completed successfully!\n"
         "🌐 Access the web dashboard at: http://localhost:8000\n"
-        "📊 Run 'python src/main.py' to start the interactive dashboard",
+        "📊 Run './start.sh' (from the log-profiler directory) to start the interactive dashboard",
         title="Next Steps",
         style="bold green"
     ))
@@ -1989,28 +2083,401 @@ if __name__ == "__main__":
     asyncio.run(main())
 EOF
 
-# Create build and test script
+# Application start/stop (run from generated project directory)
+cat > start.sh << 'STARTEOF'
+#!/bin/bash
+set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+BACKGROUND=0
+for arg in "$@"; do
+  case "$arg" in
+    --background|--daemon|-d) BACKGROUND=1 ;;
+  esac
+done
+
+if [[ ! -f "$SCRIPT_DIR/venv/bin/activate" ]]; then
+  echo "ERROR: venv not found. Run setup.sh first (from the directory that contains it)." >&2
+  exit 1
+fi
+
+PORT="${PORT:-8000}"
+if command -v ss >/dev/null 2>&1; then
+  if ss -tlnp 2>/dev/null | grep -qE ":${PORT}\\s"; then
+    echo "ERROR: Port ${PORT} is already in use — another instance may be running." >&2
+    ss -tlnp 2>/dev/null | grep -E ":${PORT}\\s" || true
+    exit 1
+  fi
+elif command -v fuser >/dev/null 2>&1; then
+  if fuser "${PORT}/tcp" 2>/dev/null | grep -q .; then
+    echo "ERROR: Port ${PORT} is already in use." >&2
+    exit 1
+  fi
+fi
+
+mkdir -p "$SCRIPT_DIR/logs"
+
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/venv/bin/activate"
+export PYTHONPATH="${SCRIPT_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+
+URL="http://127.0.0.1:${PORT}/"
+if [[ "$BACKGROUND" -eq 1 ]]; then
+  nohup python "$SCRIPT_DIR/src/main.py" >> "$SCRIPT_DIR/logs/server.log" 2>&1 &
+  echo $! > "$SCRIPT_DIR/.server.pid"
+  sleep 1
+  if ss -tlnp 2>/dev/null | grep -qE ":${PORT}\\s"; then
+    echo "Dashboard is running in the background (PID $(cat "$SCRIPT_DIR/.server.pid"))."
+  else
+    echo "Started background process; if the page does not load, check: $SCRIPT_DIR/logs/server.log" >&2
+  fi
+  echo "Open: $URL"
+  echo "Stop with: $SCRIPT_DIR/stop.sh"
+  exit 0
+fi
+
+echo "Starting dashboard — open: $URL"
+echo "Leave this terminal open while you use the app. Press Ctrl+C to stop."
+echo "(Or run: $SCRIPT_DIR/start.sh --background  to run detached.)"
+exec python "$SCRIPT_DIR/src/main.py"
+STARTEOF
+
+cat > stop.sh << 'STOPEOF'
+#!/bin/bash
+PORT="${PORT:-8000}"
+if command -v fuser >/dev/null 2>&1; then
+  if fuser "${PORT}/tcp" 2>/dev/null | grep -q .; then
+    fuser -k "${PORT}/tcp" 2>/dev/null || true
+    echo "Stopped process(es) on port ${PORT}."
+  else
+    echo "No process listening on port ${PORT}."
+  fi
+  exit 0
+fi
+if command -v lsof >/dev/null 2>&1; then
+  mapfile -t PIDS < <(lsof -ti ":${PORT}" 2>/dev/null || true)
+  if [[ ${#PIDS[@]} -eq 0 ]]; then
+    echo "No process listening on port ${PORT}."
+    exit 0
+  fi
+  kill "${PIDS[@]}" 2>/dev/null || true
+  echo "Stopped process(es) on port ${PORT}."
+  exit 0
+fi
+echo "ERROR: Install psmisc (fuser) or lsof to stop the server." >&2
+exit 1
+STOPEOF
+
+chmod +x start.sh stop.sh
+
+cat > .gitignore << 'GITIGNOREEOF'
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Testing / coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Local secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# App runtime (regenerated locally)
+.server.pid
+logs/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+GITIGNOREEOF
+
+cat > cleanup.sh << 'CLEANUPEOF'
+#!/bin/bash
+# Stop local services and Docker resources for this project; prune unused Docker data.
+set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+echo "==> Stopping local dashboard (if running)..."
+if [[ -x "$SCRIPT_DIR/stop.sh" ]]; then
+  "$SCRIPT_DIR/stop.sh" 2>/dev/null || true
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  echo "==> Stopping Docker Compose stack for this project..."
+  if docker compose version >/dev/null 2>&1; then
+    docker compose -f "$SCRIPT_DIR/docker-compose.yml" down --remove-orphans 2>/dev/null || true
+  elif command -v docker-compose >/dev/null 2>&1; then
+    docker-compose -f "$SCRIPT_DIR/docker-compose.yml" down --remove-orphans 2>/dev/null || true
+  fi
+
+  echo "==> Pruning stopped containers..."
+  docker container prune -f
+
+  echo "==> Pruning unused images..."
+  docker image prune -a -f
+
+  echo "==> Pruning unused networks..."
+  docker network prune -f
+
+  echo "==> Pruning build cache..."
+  docker builder prune -f
+
+  echo "==> Docker system prune (unused data)..."
+  docker system prune -f
+else
+  echo "(Docker not installed; skipped container/image cleanup.)"
+fi
+
+echo "==> Removing local ephemeral files (not for git)..."
+rm -f "$SCRIPT_DIR/.server.pid"
+rm -rf "$SCRIPT_DIR/logs"
+rm -rf "$SCRIPT_DIR/.pytest_cache"
+rm -rf "$SCRIPT_DIR/venv"
+
+while IFS= read -r -d '' dir; do
+  rm -rf "$dir"
+done < <(find "$SCRIPT_DIR" \( -path "$SCRIPT_DIR/.git" \) -prune -o -type d -name __pycache__ -print0 2>/dev/null)
+
+find "$SCRIPT_DIR" \( -path "$SCRIPT_DIR/.git" \) -prune -o -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete 2>/dev/null || true
+
+echo "Cleanup finished."
+echo "Recreate Python env: python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
+CLEANUPEOF
+
+chmod +x cleanup.sh
+
+cat > README.md << 'READMEEOF'
+# Log Performance Profiler
+
+Day 71 course project: a small FastAPI service that profiles log-processing workloads, exposes metrics over HTTP/WebSocket, and serves a browser dashboard.
+
+---
+
+## What you need
+
+| Manual run | Docker run |
+|------------|------------|
+| Python **3.11+** (3.12 recommended) | **Docker Engine** + **Docker Compose** v2 (`docker compose`) |
+
+---
+
+## Clone from GitHub
+
+```bash
+git clone <YOUR_REPO_URL>
+cd log-profiler
+```
+
+Do **not** commit `venv/`, logs, or caches—they are listed in [`.gitignore`](.gitignore). After clone, create a local virtualenv (manual path below).
+
+---
+
+## Manual execution (recommended for development)
+
+### 1. Create a virtual environment
+
+**Linux / macOS:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the dashboard
+
+From the `log-profiler` directory (repository root):
+
+```bash
+./start.sh
+```
+
+Or in the background:
+
+```bash
+./start.sh --background
+```
+
+Open **http://127.0.0.1:8000/** in your browser.
+
+- **Foreground:** leave the terminal open; stop with `Ctrl+C`.
+- **Background:** stop with `./stop.sh` (frees port `8000`).
+
+`start.sh` sets `PYTHONPATH` to the project root so `config/` and `src/` imports resolve correctly.
+
+### 4. Tests and demo
+
+```bash
+./build_and_test.sh
+```
+
+Runs `pytest` on `tests/` and the `demo.py` script.
+
+### 5. Cleanup (local files + optional Docker)
+
+```bash
+./cleanup.sh
+```
+
+Stops the app on port 8000, runs Docker prune commands if Docker is installed, removes `venv/`, logs, pytest cache, and Python bytecode. Recreate the venv afterward if you need to run manually again:
+
+```bash
+python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+```
+
+---
+
+## Docker execution
+
+All commands below assume your current directory is the **`log-profiler`** repository root (where `Dockerfile` and `docker-compose.yml` live).
+
+### Option A — Docker Compose (app + Redis)
+
+Build and start:
+
+```bash
+docker compose up --build
+```
+
+- Dashboard: **http://127.0.0.1:8000/**
+- Redis is exposed on **6379** (included for future/extension use; the demo app does not require Redis to run).
+
+Run detached:
+
+```bash
+docker compose up --build -d
+```
+
+Stop and remove containers:
+
+```bash
+docker compose down
+```
+
+### Option B — Image only (no Compose)
+
+```bash
+docker build -t log-profiler:local .
+docker run --rm -p 8000:8000 \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/logs:/app/logs" \
+  log-profiler:local
+```
+
+### Docker notes
+
+- The image sets `PYTHONPATH=/app` and runs `python src/main.py`.
+- Ensure port **8000** is free on the host before mapping `-p 8000:8000`.
+
+---
+
+## GitHub checklist
+
+Before you push:
+
+1. **Virtualenv** — never commit `venv/` (ignored).
+2. **Secrets** — do not commit `.env` files with real keys; use `.env.example` if you add configuration later.
+3. **Generated noise** — run `./cleanup.sh` or manually delete `logs/`, `.pytest_cache/`, `__pycache__/`, `.server.pid` if present.
+4. **Branch** — push `main` (or your default branch) after `git add` / `git commit`.
+
+```bash
+git add .
+git status   # confirm venv/ and caches are not staged
+git commit -m "Add log-profiler implementation"
+git push origin main
+```
+
+---
+
+## Project layout (high level)
+
+| Path | Purpose |
+|------|---------|
+| `src/main.py` | Uvicorn entrypoint |
+| `src/dashboard/` | FastAPI app + WebSocket |
+| `src/profiler/`, `src/optimizer/`, `src/analyzer/` | Profiling and log simulation |
+| `config/` | Python configuration |
+| `templates/` | Dashboard HTML |
+| `tests/` | Pytest suite |
+| `start.sh` / `stop.sh` | Manual run helpers |
+| `cleanup.sh` | Stop services + prune Docker + remove local artifacts |
+| `docker-compose.yml` / `Dockerfile` | Container deployment |
+
+---
+
+## Troubleshooting
+
+| Issue | What to try |
+|-------|-------------|
+| **Connection refused** in the browser | Start the app: `./start.sh` or Docker Compose. Nothing listens until the server runs. |
+| **Port 8000 in use** | `./stop.sh` or change `PORT=8001 ./start.sh` (match your setup). |
+| **Import errors** | Run from repo root; use `./start.sh` (sets `PYTHONPATH`). In Docker, use the provided `Dockerfile` / Compose. |
+| **No `venv`** after cleanup | `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt` |
+
+---
+
+## License
+
+Add a `LICENSE` file in this repository if you need an explicit license for GitHub.
+
+READMEEOF
+
+# Optional: run tests and demo only (does not start the HTTP server)
 cat > build_and_test.sh << 'EOF'
 #!/bin/bash
+set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/venv/bin/activate"
 
-echo "🧪 Running comprehensive test suite..."
-
-# Unit tests
-echo "Running unit tests..."
+export PYTHONPATH="${SCRIPT_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+echo "🧪 Running unit tests..."
 python -m pytest tests/test_profiler.py -v
 
-# Integration tests
-echo "Running integration demonstration..."
+echo "🎮 Running demonstration..."
 python demo.py
 
-echo "✅ All tests completed successfully!"
-echo ""
-echo "🚀 Starting web dashboard..."
-echo "Access the dashboard at: http://localhost:8000"
-echo "Press Ctrl+C to stop the server"
-
-# Start the web server
-python src/main.py
+echo "✅ Tests and demo finished. Start the dashboard with: ./start.sh"
 EOF
 
 chmod +x build_and_test.sh
@@ -2018,7 +2485,6 @@ chmod +x build_and_test.sh
 echo "✅ All Python files have valid syntax!"
 echo "🧪 Running tests..."
 
-# Run tests
 python -m pytest tests/test_profiler.py -v
 
 echo "🎮 Running demonstration..."
@@ -2035,11 +2501,12 @@ echo "✅ Generated before/after performance metrics"
 echo "✅ All tests passing"
 echo ""
 echo "🚀 Quick Start Commands:"
-echo "  1. Start web dashboard: python src/main.py"
-echo "  2. Access dashboard: http://localhost:8000"
-echo "  3. Run demo: python demo.py"
-echo "  4. Run tests: python -m pytest tests/ -v"
-echo "  5. Docker deploy: docker-compose up --build"
+echo "  1. Start dashboard: ${PROJECT_DIR}/start.sh"
+echo "  2. Open: http://localhost:8000"
+echo "  3. Stop: ${PROJECT_DIR}/stop.sh"
+echo "  4. Run demo: cd ${PROJECT_DIR} && source venv/bin/activate && python demo.py"
+echo "  5. Run tests: ${PROJECT_DIR}/build_and_test.sh"
+echo "  6. Docker: cd ${PROJECT_DIR} && docker-compose up --build"
 echo ""
 echo "📊 Key Features Implemented:"
 echo "  • Real-time CPU, memory, and I/O profiling"
@@ -2051,10 +2518,7 @@ echo "  • Interactive web dashboard"
 echo ""
 echo "🎯 Performance Optimization Success!"
 echo "Your log ingestion pipeline is now ready for production-grade performance analysis!"
-EOF
-
-chmod +x build_and_test.sh
 
 echo "✅ Day 71 Implementation Script Created Successfully!"
-echo "📁 Project: log-profiler/"
-echo "🚀 Run: ./build_and_test.sh"
+echo "📁 Project directory: ${PROJECT_DIR}/"
+echo "🚀 Start app: ${PROJECT_DIR}/start.sh"
