@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Journey Tracker · Day 170</title>
+  <script src="/static/js/react.development.js"></script>
+  <script src="/static/js/react-dom.development.js"></script>
+  <script src="/static/js/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #162032 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #63b3ed;
+      letter-spacing: 0.3px;
+    }
+    .header small { color: #718096; font-size: 12px; }
+    .badge {
+      background: #2d3748;
+      color: #63b3ed;
+      border: 1px solid #3182ce;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: #4a5568; }
+    .stat-card .label { font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #63b3ed; }
+    .stat-card .sub   { font-size: 11px; color: #718096; margin-top: 4px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .panel {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .panel-header {
+      background: #1e2535;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #a0aec0;
+      border-bottom: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-body { padding: 16px 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { color: #718096; text-transform: uppercase; letter-spacing: 0.6px; font-size: 10px; padding: 8px 6px; text-align: left; border-bottom: 1px solid #2d3748; }
+    td { padding: 8px 6px; border-bottom: 1px solid #1e2535; color: #cbd5e0; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e2535; }
+    .tag {
+      display: inline-block;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+    }
+    .tag-green { background: #1c4532; color: #68d391; }
+    .tag-gray  { background: #2d3748; color: #718096; }
+    .reload-btn {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .reload-btn:hover { background: #3182ce; }
+    .reload-btn:disabled { background: #2d3748; color: #718096; cursor: not-allowed; }
+    .flow-svg text { pointer-events: none; }
+    .flow-wrap { overflow: hidden; }
+    .flow-svg { display: block; width: 100%; max-width: 100%; height: auto; }
+    .loading { color: #718096; font-size: 13px; text-align: center; padding: 40px; }
+    .error   { color: #fc8181; font-size: 13px; text-align: center; padding: 40px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const API = "";   // same origin
+
+/* ── Helpers ── */
+function useApi(endpoint) {
+  const [data, setData]     = useState(null);
+  const [loading, setLoad]  = useState(true);
+  const [error, setError]   = useState(null);
+
+  const fetch_ = useCallback(() => {
+    setLoad(true); setError(null);
+    fetch(API + endpoint)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(d => { setData(d); setLoad(false); })
+      .catch(e => { setError(String(e)); setLoad(false); });
+  }, [endpoint]);
+
+  useEffect(() => { fetch_(); }, [fetch_]);
+  return { data, loading, error, reload: fetch_ };
+}
+
+/* ── StatsPanel ── */
+function StatsPanel({ stats }) {
+  if (!stats) return null;
+  const cards = [
+    { label: "Total Sessions",   value: stats.total_sessions,          sub: "in log file" },
+    { label: "Conversions",      value: stats.converted_sessions,       sub: "reached /confirmation" },
+    { label: "Conversion Rate",  value: stats.conversion_rate + "%",    sub: "end-to-end" },
+    { label: "Avg Path Length",  value: stats.avg_path_length,          sub: "pages per session" },
+  ];
+  return (
+    <div className="stats-row">
+      {cards.map(c => (
+        <div key={c.label} className="stat-card">
+          <div className="label">{c.label}</div>
+          <div className="value">{c.value}</div>
+          <div className="sub">{c.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── FlowGraph (SVG) ── */
+function FlowGraph({ nodes, edges }) {
+  if (!nodes || !nodes.length) return <div className="loading">No flow data</div>;
+
+  const W = 560, H = 320;
+  const PAD = 28;
+
+  // Assign columns by page depth heuristic
+  const COLS = {
+    "/home": 0, "/search": 0,
+    "/products": 1, "/product/detail": 2,
+    "/cart": 3, "/checkout": 4,
+    "/payment": 5, "/confirmation": 6,
+    "/profile": 1,
+  };
+  const maxCol = 6;
+
+  const maxNodeCount = Math.max(...nodes.map(n => n.count), 1);
+  const maxEdgeCount = Math.max(...edges.map(e => e.count), 1);
+
+  // Group nodes into columns.
+  const colBuckets = {};
+  nodes.forEach(n => {
+    const col = COLS[n.id] !== undefined ? COLS[n.id] : 3;
+    (colBuckets[col] = colBuckets[col] || []).push(n);
+  });
+
+  // Columns are 0..6 (7 total). Use (maxCol + 1) so the last column
+  // doesn't land on the right edge and get clipped.
+  const colWidth = (W - PAD * 2) / (maxCol + 1);
+
+  // Compute radii first (we will shrink if a column is too crowded).
+  const r0 = {};
+  nodes.forEach(n => { r0[n.id] = 8 + (n.count / maxNodeCount) * 14; }); // 8..22
+
+  let radiusScale = 1.0;
+  const minGap = 14;
+  Object.values(colBuckets).forEach(ns => {
+    if (!ns.length) return;
+    const needed = ns.reduce((sum, n) => sum + 2 * r0[n.id], 0) + minGap * (ns.length - 1);
+    const available = (H - PAD * 2);
+    if (needed > available) {
+      const s = (available - minGap * (ns.length - 1)) / (ns.reduce((sum, n) => sum + 2 * r0[n.id], 0) || 1);
+      radiusScale = Math.min(radiusScale, Math.max(0.6, s));
+    }
+  });
+
+  const r = {};
+  nodes.forEach(n => { r[n.id] = Math.max(6, r0[n.id] * radiusScale); });
+
+  // Build node positions with radius-aware stacking (prevents overlaps).
+  const pos = {};
+  Object.entries(colBuckets).forEach(([col, ns]) => {
+    ns.sort((a, b) => (b.count - a.count) || a.id.localeCompare(b.id));
+    const x = PAD + parseInt(col) * colWidth + colWidth / 2;
+    const total = ns.reduce((sum, n) => sum + 2 * r[n.id], 0) + minGap * (ns.length - 1);
+    const top = PAD + Math.max(0, ((H - PAD * 2) - total) / 2);
+
+    let cursor = top;
+    ns.forEach(n => {
+      const y = cursor + r[n.id];
+      pos[n.id] = { x, y };
+      cursor += 2 * r[n.id] + minGap;
+    });
+  });
+
+  return (
+    <div className="flow-wrap">
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="flow-svg"
+           preserveAspectRatio="xMidYMid meet"
+           style={{ background: "#111827", borderRadius: 8 }}>
+        {/* Edges */}
+        {edges.slice(0, 30).map((e, i) => {
+          const s = pos[e.source], t = pos[e.target];
+          if (!s || !t) return null;
+          const w = 1 + (e.count / maxEdgeCount) * 6;
+          const alpha = 0.3 + (e.count / maxEdgeCount) * 0.5;
+          const cx = (s.x + t.x) / 2;
+          return (
+            <path key={i}
+              d={`M ${s.x} ${s.y} Q ${cx} ${s.y} ${t.x} ${t.y}`}
+              fill="none"
+              stroke={`rgba(99,179,237,${alpha})`}
+              strokeWidth={w}
+            >
+              <title>{e.source} → {e.target} ({e.count})</title>
+            </path>
+          );
+        })}
+        {/* Nodes */}
+        {nodes.map(n => {
+          const p = pos[n.id];
+          if (!p) return null;
+        const radius = r[n.id] || 10;
+          const isExit = n.id === "/confirmation";
+          const fill = isExit ? "#2c7a4b" : "#1e3a5f";
+          const stroke = isExit ? "#68d391" : "#63b3ed";
+          const label = n.id.replace("/", "").replace("/", " ") || "home";
+          return (
+            <g key={n.id}>
+            <circle cx={p.x} cy={p.y} r={radius} fill={fill} stroke={stroke} strokeWidth="1.5">
+                <title>{n.id} ({n.count} visits)</title>
+              </circle>
+            <text x={p.x} y={p.y + radius + 11} textAnchor="middle" fontSize="8" fill="#718096">
+                {label || "home"}
+              </text>
+              <text x={p.x} y={p.y + 3} textAnchor="middle" fontSize="8" fill={stroke} fontWeight="600">
+                {n.count}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/* ── TopJourneys ── */
+function TopJourneys({ journeys }) {
+  if (!journeys) return null;
+  return (
+    <div className="panel">
+      <div className="panel-header">Top Journey Paths</div>
+      <div className="panel-body" style={{ maxHeight: 280, overflowY: "auto" }}>
+        <table>
+          <thead><tr><th>#</th><th>Path</th><th>Count</th></tr></thead>
+          <tbody>
+            {journeys.map((j, i) => (
+              <tr key={i}>
+                <td style={{ color: "#718096" }}>{i + 1}</td>
+                <td style={{ fontFamily: "monospace", fontSize: 11 }}>{j.path}</td>
+                <td>
+                  <span style={{
+                    background: `rgba(99,179,237,${0.15 + (j.count / journeys[0].count) * 0.5})`,
+                    color: "#63b3ed", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 700
+                  }}>{j.count}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── SessionList ── */
+function SessionList({ sessions }) {
+  if (!sessions) return null;
+  return (
+    <div className="panel">
+      <div className="panel-header">Recent Sessions (last 20)</div>
+      <div className="panel-body" style={{ maxHeight: 280, overflowY: "auto" }}>
+        <table>
+          <thead><tr><th>Session</th><th>User</th><th>Steps</th><th>Latency</th><th>Status</th></tr></thead>
+          <tbody>
+            {sessions.map((s, i) => (
+              <tr key={i}>
+                <td style={{ fontFamily: "monospace", fontSize: 10 }}>{s.session_id}</td>
+                <td style={{ color: "#a0aec0" }}>{s.user_id}</td>
+                <td>{s.steps}</td>
+                <td style={{ color: "#718096" }}>{s.avg_latency_ms}ms</td>
+                <td>
+                  <span className={`tag ${s.converted ? "tag-green" : "tag-gray"}`}>
+                    {s.converted ? "Converted" : "Dropped"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── App ── */
+function App() {
+  const stats    = useApi("/api/stats");
+  const flow     = useApi("/api/flow");
+  const journeys = useApi("/api/journeys");
+  const sessions = useApi("/api/sessions");
+  const [reloading, setReloading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  function reloadAll() {
+    setReloading(true); setMsg("");
+    fetch("/api/reload", { method: "POST" })
+      .then(r => r.json())
+      .then(d => {
+        setMsg(d.message);
+        stats.reload(); flow.reload(); journeys.reload(); sessions.reload();
+        setReloading(false);
+      })
+      .catch(() => { setMsg("Reload failed"); setReloading(false); });
+  }
+
+  return (
+    <>
+      <header className="header">
+        <div>
+          <h1>User Journey Tracker</h1>
+          <small>254-Day System Design · Day 170 · Business Analytics</small>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {msg && <span style={{ fontSize: 11, color: "#68d391" }}>{msg}</span>}
+          <span className="badge">Week 25</span>
+          <button className="reload-btn" onClick={reloadAll} disabled={reloading}>
+            {reloading ? "Regenerating…" : "⟳ Reload Logs"}
+          </button>
+        </div>
+      </header>
+
+      <main className="main">
+        {stats.loading ? <div className="loading">Loading stats…</div>
+         : stats.error  ? <div className="error">Stats error: {stats.error}</div>
+         : <StatsPanel stats={stats.data}/>}
+
+        <div className="panel" style={{ marginBottom: 20 }}>
+          <div className="panel-header">
+            User Flow Graph
+            <span style={{ fontSize: 10, color: "#718096" }}>
+              circle size = visit count · line weight = transition count
+            </span>
+          </div>
+          <div className="panel-body">
+            {flow.loading ? <div className="loading">Building flow graph…</div>
+             : flow.error  ? <div className="error">Flow error: {flow.error}</div>
+             : <FlowGraph nodes={flow.data.nodes} edges={flow.data.edges}/>}
+          </div>
+        </div>
+
+        <div className="grid-2">
+          {journeys.loading ? <div className="loading">Loading paths…</div>
+           : <TopJourneys journeys={journeys.data}/>}
+          {sessions.loading ? <div className="loading">Loading sessions…</div>
+           : <SessionList sessions={sessions.data}/>}
+        </div>
+      </main>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

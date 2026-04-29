@@ -1,0 +1,15 @@
+services:
+  journey-tracker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5170:5170"
+    volumes:
+      - journey-logs:/app/logs
+    environment:
+      - LOG_FILE=/app/logs/app.log
+      - PORT=5170
+
+volumes:
+  journey-logs:
