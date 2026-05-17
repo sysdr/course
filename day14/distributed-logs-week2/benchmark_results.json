@@ -1,8 +1,0 @@
-{
-  "duration": 10.01686429977417,
-  "logs_sent": 4341,
-  "errors": 0,
-  "target_rps": 500,
-  "actual_rps": 433.36915326863993,
-  "success_rate": 100.0
-}

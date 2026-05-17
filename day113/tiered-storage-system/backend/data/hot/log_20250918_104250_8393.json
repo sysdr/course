@@ -1,1 +1,0 @@
-{"message": "User authentication successful #27", "level": "INFO", "service": "payment-gateway", "priority": "low", "metadata": {"user_id": "user_5783", "request_id": "req_93072", "ip_address": "192.168.1.15"}, "timestamp": "2025-09-18T10:42:50.640268", "entry_id": "log_20250918_104250_8393", "stored_at": "2025-09-18T10:42:50.640336", "tier": "hot", "size_bytes": 253}

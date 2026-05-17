@@ -1,1 +1,0 @@
-{"message": "Database query executed #4", "level": "WARN", "service": "payment-gateway", "priority": "high", "metadata": {"user_id": "user_8424", "request_id": "req_92940", "ip_address": "192.168.1.171"}, "timestamp": "2025-09-18T10:42:48.227956", "entry_id": "log_20250918_104248_5051", "stored_at": "2025-09-18T10:42:48.228003", "tier": "hot", "size_bytes": 247}

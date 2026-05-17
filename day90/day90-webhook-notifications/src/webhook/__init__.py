@@ -1,3 +1,0 @@
-"""
-Webhook core functionality package.
-"""

@@ -1,1 +1,0 @@
-# Log Shipping Client Package

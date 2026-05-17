@@ -1,4 +1,0 @@
-2024-01-15 10:30:00 ERROR [user-service] Database connection pool exhausted
-Jan 15 10:30:01 web-server nginx[1234]: Connection timeout
-[2024-01-15T10:30:02.123Z] WARN: Memory usage at 85%
-2024-01-15 10:30:03 INFO Application started successfully

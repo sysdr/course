@@ -1,1 +1,0 @@
-{"message": "Payment processing started #7", "level": "DEBUG", "service": "web-api", "priority": "normal", "metadata": {"user_id": "user_7630", "request_id": "req_73651", "ip_address": "192.168.1.115"}, "timestamp": "2025-09-18T10:42:48.543505", "entry_id": "log_20250918_104248_8191", "stored_at": "2025-09-18T10:42:48.543559", "tier": "hot", "size_bytes": 245}

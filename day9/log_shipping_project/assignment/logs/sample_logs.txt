@@ -1,5 +1,0 @@
-2023-05-19 10:15:22 INFO User login successful: user123
-2023-05-19 10:15:25 DEBUG Loading user preferences
-2023-05-19 10:15:30 WARNING Failed to load optional module: analytics
-2023-05-19 10:16:02 ERROR Database connection timeout after 30s
-2023-05-19 10:16:10 INFO User logout: user123

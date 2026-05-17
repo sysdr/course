@@ -1,1 +1,0 @@
-{"message": "Connection timeout occurred #2", "level": "INFO", "service": "cache", "priority": "normal", "metadata": {"user_id": "user_3227", "request_id": "req_89228", "ip_address": "192.168.1.196"}, "timestamp": "2025-09-18T10:42:48.016695", "entry_id": "log_20250918_104248_9616", "stored_at": "2025-09-18T10:42:48.016754", "tier": "hot", "size_bytes": 243}

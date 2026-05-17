@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: log-processing
-  labels:
-    name: log-processing
-    environment: production

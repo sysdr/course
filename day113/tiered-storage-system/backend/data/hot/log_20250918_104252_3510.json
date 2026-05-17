@@ -1,1 +1,0 @@
-{"message": "Error processing request #45", "level": "ERROR", "service": "web-api", "priority": "high", "metadata": {"user_id": "user_5159", "request_id": "req_39725", "ip_address": "192.168.1.57"}, "timestamp": "2025-09-18T10:42:52.523192", "entry_id": "log_20250918_104252_3510", "stored_at": "2025-09-18T10:42:52.523267", "tier": "hot", "size_bytes": 241}

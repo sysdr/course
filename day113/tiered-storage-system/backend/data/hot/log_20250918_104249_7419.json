@@ -1,1 +1,0 @@
-{"message": "User authentication successful #15", "level": "INFO", "service": "auth-service", "priority": "low", "metadata": {"user_id": "user_2698", "request_id": "req_61222", "ip_address": "192.168.1.141"}, "timestamp": "2025-09-18T10:42:49.379403", "entry_id": "log_20250918_104249_7419", "stored_at": "2025-09-18T10:42:49.379473", "tier": "hot", "size_bytes": 251}

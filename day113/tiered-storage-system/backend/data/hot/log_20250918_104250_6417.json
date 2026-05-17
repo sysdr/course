@@ -1,1 +1,0 @@
-{"message": "Error processing request #21", "level": "WARN", "service": "payment-gateway", "priority": "low", "metadata": {"user_id": "user_1122", "request_id": "req_52825", "ip_address": "192.168.1.122"}, "timestamp": "2025-09-18T10:42:50.007672", "entry_id": "log_20250918_104250_6417", "stored_at": "2025-09-18T10:42:50.007726", "tier": "hot", "size_bytes": 248}

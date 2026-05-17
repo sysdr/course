@@ -1,1 +1,0 @@
-{"message": "Database query executed #48", "level": "ERROR", "service": "database", "priority": "normal", "metadata": {"user_id": "user_2989", "request_id": "req_69108", "ip_address": "192.168.1.114"}, "timestamp": "2025-09-18T10:42:52.838628", "entry_id": "log_20250918_104252_9655", "stored_at": "2025-09-18T10:42:52.838684", "tier": "hot", "size_bytes": 244}

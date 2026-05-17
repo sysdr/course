@@ -1,9 +1,0 @@
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY src/storage/storage_node.py .
-
-EXPOSE 9090
-
-CMD ["python", "storage_node.py"]

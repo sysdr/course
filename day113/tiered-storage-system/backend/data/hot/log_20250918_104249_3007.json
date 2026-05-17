@@ -1,1 +1,0 @@
-{"message": "Error processing request #18", "level": "DEBUG", "service": "auth-service", "priority": "normal", "metadata": {"user_id": "user_4510", "request_id": "req_41438", "ip_address": "192.168.1.193"}, "timestamp": "2025-09-18T10:42:49.694493", "entry_id": "log_20250918_104249_3007", "stored_at": "2025-09-18T10:42:49.694555", "tier": "hot", "size_bytes": 249}

@@ -1,1 +1,0 @@
-{"message": "User authentication successful #8", "level": "WARN", "service": "web-api", "priority": "high", "metadata": {"user_id": "user_9288", "request_id": "req_73079", "ip_address": "192.168.1.130"}, "timestamp": "2025-09-18T10:42:48.648650", "entry_id": "log_20250918_104248_3318", "stored_at": "2025-09-18T10:42:48.648696", "tier": "hot", "size_bytes": 246}

@@ -1,1 +1,0 @@
-{"message": "Connection timeout occurred #46", "level": "DEBUG", "service": "cache", "priority": "high", "metadata": {"user_id": "user_5650", "request_id": "req_91788", "ip_address": "192.168.1.70"}, "timestamp": "2025-09-18T10:42:52.628930", "entry_id": "log_20250918_104252_8739", "stored_at": "2025-09-18T10:42:52.628965", "tier": "hot", "size_bytes": 242}

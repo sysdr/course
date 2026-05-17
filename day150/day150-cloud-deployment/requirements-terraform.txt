@@ -1,6 +1,0 @@
-# Terraform and cloud CLI tools
-# Install separately via package managers:
-# - Terraform >= 1.7.0
-# - AWS CLI >= 2.15.0
-# - Azure CLI >= 2.58.0
-# - Google Cloud SDK >= 465.0.0

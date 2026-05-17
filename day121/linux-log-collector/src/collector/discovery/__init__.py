@@ -1,1 +1,0 @@
-"""Log Discovery Module"""

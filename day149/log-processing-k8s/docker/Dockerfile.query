@@ -1,9 +1,0 @@
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY src/query/query_coordinator.py .
-
-EXPOSE 8080
-
-CMD ["python", "query_coordinator.py"]

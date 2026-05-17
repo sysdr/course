@@ -1,7 +1,0 @@
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY src/collector/log_collector.py .
-
-CMD ["python", "log_collector.py"]

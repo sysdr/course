@@ -1,1 +1,0 @@
-{"message": "API request received #38", "level": "INFO", "service": "payment-gateway", "priority": "normal", "metadata": {"user_id": "user_9002", "request_id": "req_91228", "ip_address": "192.168.1.254"}, "timestamp": "2025-09-18T10:42:51.787886", "entry_id": "log_20250918_104251_6845", "stored_at": "2025-09-18T10:42:51.787931", "tier": "hot", "size_bytes": 247}

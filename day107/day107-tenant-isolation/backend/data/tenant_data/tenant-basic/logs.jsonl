@@ -1,5 +1,0 @@
-{"tenant_id": "tenant-basic", "timestamp": "2025-09-11T06:56:51.664530", "data": {"message": "Test log entry", "level": "INFO"}, "processed_at": "2025-09-11T06:56:51.664537"}
-{"tenant_id": "tenant-basic", "timestamp": "2025-09-11T06:58:28.780040", "data": {"message": "Test log entry", "level": "INFO"}, "processed_at": "2025-09-11T06:58:28.780046"}
-{"tenant_id": "tenant-basic", "timestamp": "2025-09-11T06:59:56.902433", "data": {"message": "Test log entry", "level": "INFO"}, "processed_at": "2025-09-11T06:59:56.902438"}
-{"tenant_id": "tenant-basic", "timestamp": "2025-09-11T07:00:25.634533", "data": {"message": "Test log entry", "level": "INFO"}, "processed_at": "2025-09-11T07:00:25.634539"}
-{"tenant_id": "tenant-basic", "timestamp": "2025-09-11T07:00:38.412336", "data": {"message": "Test log entry", "level": "INFO"}, "processed_at": "2025-09-11T07:00:38.412341"}

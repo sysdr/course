@@ -1,1 +1,0 @@
-{"message": "Cache hit for user data #36", "level": "ERROR", "service": "database", "priority": "low", "metadata": {"user_id": "user_3045", "request_id": "req_25528", "ip_address": "192.168.1.233"}, "timestamp": "2025-09-18T10:42:51.578511", "entry_id": "log_20250918_104251_5899", "stored_at": "2025-09-18T10:42:51.578543", "tier": "hot", "size_bytes": 241}

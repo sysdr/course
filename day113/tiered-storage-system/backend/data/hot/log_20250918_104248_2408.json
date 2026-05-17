@@ -1,1 +1,0 @@
-{"message": "Connection timeout occurred #6", "level": "INFO", "service": "web-api", "priority": "normal", "metadata": {"user_id": "user_2997", "request_id": "req_17259", "ip_address": "192.168.1.100"}, "timestamp": "2025-09-18T10:42:48.438670", "entry_id": "log_20250918_104248_2408", "stored_at": "2025-09-18T10:42:48.438715", "tier": "hot", "size_bytes": 245}

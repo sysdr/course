@@ -1,2 +1,0 @@
-# No Python dependencies needed for this demonstration
-# All services run in containers

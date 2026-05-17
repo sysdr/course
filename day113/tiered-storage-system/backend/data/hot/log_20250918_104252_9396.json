@@ -1,1 +1,0 @@
-{"message": "Payment processing started #42", "level": "ERROR", "service": "auth-service", "priority": "high", "metadata": {"user_id": "user_8505", "request_id": "req_44468", "ip_address": "192.168.1.32"}, "timestamp": "2025-09-18T10:42:52.207898", "entry_id": "log_20250918_104252_9396", "stored_at": "2025-09-18T10:42:52.207955", "tier": "hot", "size_bytes": 248}

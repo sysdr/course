@@ -1,1 +1,0 @@
-{"message": "Error processing request #1", "level": "WARN", "service": "database", "priority": "high", "metadata": {"user_id": "user_6350", "request_id": "req_31193", "ip_address": "192.168.1.25"}, "timestamp": "2025-09-18T10:42:47.912721", "entry_id": "log_20250918_104247_1578", "stored_at": "2025-09-18T10:42:47.912759", "tier": "hot", "size_bytes": 240}

@@ -1,1 +1,0 @@
-{"message": "Data migration completed #39", "level": "INFO", "service": "database", "priority": "low", "metadata": {"user_id": "user_8162", "request_id": "req_54615", "ip_address": "192.168.1.125"}, "timestamp": "2025-09-18T10:42:51.892438", "entry_id": "log_20250918_104251_5551", "stored_at": "2025-09-18T10:42:51.892467", "tier": "hot", "size_bytes": 241}

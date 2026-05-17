@@ -1,1 +1,0 @@
-{"message": "Test log entry", "level": "INFO", "service": "test", "priority": "normal", "metadata": {}, "timestamp": "2025-09-18T10:41:15.964553", "entry_id": "log_20250918_104115_2568", "stored_at": "2025-09-18T10:41:15.964613", "tier": "hot", "size_bytes": 146}

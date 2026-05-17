@@ -1,9 +1,0 @@
-**/__pycache__
-**/*.pyc
-**/.pytest_cache
-**/node_modules
-.git
-.gitignore
-README.md
-**/.DS_Store
-**/Thumbs.db

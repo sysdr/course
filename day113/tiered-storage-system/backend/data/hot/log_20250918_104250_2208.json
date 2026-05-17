@@ -1,1 +1,0 @@
-{"message": "Database query executed #22", "level": "WARN", "service": "cache", "priority": "normal", "metadata": {"user_id": "user_5130", "request_id": "req_30722", "ip_address": "192.168.1.19"}, "timestamp": "2025-09-18T10:42:50.111313", "entry_id": "log_20250918_104250_2208", "stored_at": "2025-09-18T10:42:50.111346", "tier": "hot", "size_bytes": 239}

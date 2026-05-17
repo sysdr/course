@@ -1,1 +1,0 @@
-{"message": "API request received #5", "level": "ERROR", "service": "database", "priority": "low", "metadata": {"user_id": "user_4233", "request_id": "req_83611", "ip_address": "192.168.1.90"}, "timestamp": "2025-09-18T10:42:48.332743", "entry_id": "log_20250918_104248_7484", "stored_at": "2025-09-18T10:42:48.332801", "tier": "hot", "size_bytes": 236}

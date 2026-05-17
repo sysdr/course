@@ -1,1 +1,0 @@
-{"message": "User authentication successful #28", "level": "WARN", "service": "cache", "priority": "normal", "metadata": {"user_id": "user_2134", "request_id": "req_27747", "ip_address": "192.168.1.135"}, "timestamp": "2025-09-18T10:42:50.745830", "entry_id": "log_20250918_104250_8572", "stored_at": "2025-09-18T10:42:50.745952", "tier": "hot", "size_bytes": 247}

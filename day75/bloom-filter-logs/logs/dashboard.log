@@ -1,6 +1,0 @@
-Dash is running on http://0.0.0.0:8002/
-
- * Serving Flask app 'dashboard'
- * Debug mode: on
-/opt/homebrew/Cellar/python@3.11/3.11.12_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '

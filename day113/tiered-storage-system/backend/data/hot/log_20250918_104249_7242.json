@@ -1,1 +1,0 @@
-{"message": "Connection timeout occurred #16", "level": "INFO", "service": "payment-gateway", "priority": "normal", "metadata": {"user_id": "user_9099", "request_id": "req_75552", "ip_address": "192.168.1.227"}, "timestamp": "2025-09-18T10:42:49.484586", "entry_id": "log_20250918_104249_7242", "stored_at": "2025-09-18T10:42:49.484637", "tier": "hot", "size_bytes": 254}
