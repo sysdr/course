@@ -4,6 +4,16 @@
 ## All lessons are moved to - https://github.com/sysdr/course-p.git
 ## Upgrade to access all lessons  http://sdcourse.substack.com/subscribe
 -----------
+# LogStream — Build Distributed Systems
+## Hands-on System Design: Distributed Log Processing with Java & Spring Boot
+
+**Build LogStream — your own production-grade distributed log platform.** *Curriculum: Distributed Log Implementation With Java & Spring Boot* 
+
+---
+
+> System design is only as good as its implementation. In this module, we move beyond high-level diagrams to write the actual Java and Spring Boot code that powers reliable, high-throughput distributed
+> Stop Drawing Boxes: Implementing a Production-Ready Distributed Log System
+> From Zero to Production - 254 Days Implementation Journey
 
 
 # Hands On System Design with "Distributed Systems Implementation - 254-Lesson’s curriculum"
