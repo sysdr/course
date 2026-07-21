@@ -221,6 +221,7 @@ chmod +x log-collector/log_collector.py
 # Create requirements.txt
 cat > log-collector/requirements.txt << 'EOF'
 watchdog==2.3.1
+PyYAML==6.0.1
 EOF
 
 # Create Dockerfile
