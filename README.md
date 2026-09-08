@@ -1,78 +1,65 @@
--------------
-## NOTE : 
+# Hands On System Design with Distributed Systems Implementation
 
-> ### All lessons are moved to - https://github.com/sysdr/course-p.git
-> ### Upgrade to access all lessons  http://sdcourse.substack.com/subscribe
------------
-# LogStream — Build Distributed Systems
-## Hands-on System Design: Distributed Log Processing with Java & Spring Boot
+**4 full lessons from this course are free to read — no signup, no card.** This repository holds the working code for those lessons.
 
-**Build LogStream — your own production-grade distributed log platform.** *Curriculum: Distributed Log Implementation With Java & Spring Boot* 
+[![Free lessons](https://img.shields.io/badge/free_lessons-4-16703E?style=flat-square)](https://systemdrd.com/courses/hands-on-system-design-course-about-code/?utm_source=github&utm_medium=readme&utm_campaign=course) [![Course](https://img.shields.io/badge/full_course-28_lessons-D92B21?style=flat-square)](https://systemdrd.com/courses/hands-on-system-design-course-about-code/?utm_source=github&utm_medium=readme&utm_campaign=course) [![Topic](https://img.shields.io/badge/Backend_Engineering-informational?style=flat-square)](https://systemdrd.com/courses/hands-on-system-design-course-about-code/?utm_source=github&utm_medium=readme&utm_campaign=course)
+
+## Start with the free lessons
+
+Each lesson is the same one a paying subscriber reads — the full text, not a preview. The code for it is in this repository.
+
+| | Read the lesson |
+|---|---|
+| **Lesson 1** | [Setting Up Your Distributed Systems Environment – Building first component](https://systemdrd.com/lessons/setting-up-distributed-system/?utm_source=github&utm_medium=readme&utm_campaign=course) |
+| **Lesson 2** | [Building Your First Log Generator](https://systemdrd.com/lessons/building-log-generator/?utm_source=github&utm_medium=readme&utm_campaign=course) |
+| **Lesson 3** | [Creating a Simple Log Collector Service](https://systemdrd.com/lessons/simple-log-collector-service/?utm_source=github&utm_medium=readme&utm_campaign=course) |
+| **Lesson 1** | [Setting Up the Infrastructure](https://systemdrd.com/lessons/a-integratedday-7-integrate-components/?utm_source=github&utm_medium=readme&utm_campaign=course) |
+
+## The rest of the course — 28 lessons
+
+<details><summary>Full curriculum (28 lessons)</summary>
+
+- Trial Lesson : Setting Up Your Distributed Systems Environment – Building first component — **free, above**
+- Trial Lesson: Building Your First Log Generator — **free, above**
+- Trial Lesson: Creating a Simple Log Collector Service — **free, above**
+- Lesson 1: Setting Up the Infrastructure — **free, above**
+- Lesson 2 : Network-Based Log Collection
+- Lesson 3 : Data Serialization and Formats
+- Lesson 4: Build a Distributed Log Storage Cluster — Replication, Quorums, and Repair
+- Lesson 5: Message Queues for Log Processing — “Never drop logs during spikes”
+- Lesson 6: Stream Processing with Kafka — “Turn log floods into live intelligence”
+- Lesson 7: Distributed Log Analytics — “Turn raw logs into decisions”
+- Lesson 8: Distributed Log Search — “Find the needle in the haystack”
+- Lesson 9: High Availability and Fault Tolerance — “Keep the pipeline alive when things break”
+- Lesson 10 : Security and Compliance — Protect logs before they become liability
+- Lesson 11: Performance Optimization — Make every log byte earn its keep
+- Lesson 12: Advanced Analytics — “Turn raw logs into decisions”
+- Lesson 13: API & Service Layer — The front door to your log platform
+- Lesson 14: Web Interface and Dashboards
+- Lesson 15: Advanced Operational Features
+- Lesson 16 : Multi-tenancy and Enterprise Features
+- Lesson 17 : Storage and Retention Management
+- Lesson 18: Log Source Integration
+- Lesson 19 : Application Integration
+- Lesson 20 :External Integration
+- Lesson 21: Advanced Processing Integrations
+- Lesson 22: Deployment and Operations
+- Lesson 23: Security Log Processing
+- Lesson 24: IT Operations Use Cases
+- Lesson 25: Business Analytics Use Cases
+
+</details>
+
+## Get the whole course
+
+**$199 one-off.** No subscription.
+
+- All 28 lessons, written to the same depth as the 4 free ones above
+- The complete source repository, one commit per lesson, beyond the 4 lessons here
+- Every later lesson builds on the code in this repo, so nothing is thrown away
+
+### [Read the free lessons first →](https://systemdrd.com/courses/hands-on-system-design-course-about-code/?utm_source=github&utm_medium=readme&utm_campaign=course)
 
 ---
 
-> System design is only as good as its implementation. In this module, we move beyond high-level diagrams to write the actual Java and Spring Boot code that powers reliable, high-throughput distributed
-> Stop Drawing Boxes: Implementing a Production-Ready Distributed Log System
-> From Zero to Production - 254 Days Implementation Journey
-
-
-# Hands On System Design with "Distributed Systems Implementation - 254-Lesson’s curriculum"
-
-## Hands-on System Design: From Zero to Production
-
-**[Check here for detailed 254 Lesson course Curriculum](https://sdcourse.substack.com/p/hands-on-distributed-systems-with)**
-
-## Why This Course?
-
-Build a complete, production-ready system design from scratch in just one year. Each day features practical, hands-on tasks with concrete outputs that incrementally develop your expertise in scalable architectures, component design, and modern DevOps practices.
-
-## What You'll Build
-
-A comprehensive system capable of:
-
-- Supporting millions of concurrent users
-- Scaling horizontally across distributed infrastructure
-- Processing data efficiently with optimized algorithms
-- Providing responsive interfaces with millisecond latency
-- Supporting multi-tenancy for enterprise deployments
-- Operating with high availability across multiple regions
-
-## Who Should Take This Course?
-
-This course is perfect for:
-
-- **Recent CS Graduates** seeking to bridge the gap between academic theory and production-ready skills
-- **Job Seekers** looking to enhance their resume with demonstrated practical experience
-- **Software Engineers** wanting to level up from application development to system architecture
-- **System Architects** interested in modern, cloud-native architectures
-- **DevOps Engineers** expanding their knowledge of scalable systems
-- **Backend Engineers** building expertise in high-performance systems
-- **Engineering Managers** who need technical depth to lead system design efforts
-- **Product Managers** seeking technical understanding of scalable architectures
-
-## What Makes This Course Different?
-
-- **Practical Focus**: Build real components with tangible outputs every single day
-- **Progressive Learning**: Start with basics and advance to complex system design concepts
-- **Full-Stack Coverage**: Spans from low-level optimization to high-level architecture
-- **Production Mindset**: Addresses security, scalability, observability, and fault tolerance
-- **Modern Technologies**: Incorporates industry-standard tools like Kubernetes, Redis, and message queues
-- **End-to-End System**: Complete the journey from individual components to an integrated platform
-
-## Key Topics Covered
-
-**[Check here for detailed 254 Lesson course Curriculum](#)**
-
-- System decomposition and service-oriented architectures
-- Scalable backend design with proper separation of concerns
-- Database selection, optimization and access patterns
-- API design and protocol considerations
-- Caching strategies at multiple system layers
-- Load balancing and traffic management
-- Security principles and implementation
-- Performance optimization techniques
-- Monitoring, alerting and observability
-
-Join us on this year-long journey to master system design by building a production-grade platform that showcases your skills and opens doors to advanced engineering roles.
-
-**Start building your system design expertise today.**
+Part of [SystemDR](https://systemdrd.com/courses/?utm_source=github&utm_medium=readme&utm_campaign=course) — hands-on engineering courses where you build the system, break it, and fix it. [All courses](https://systemdrd.com/courses/?utm_source=github&utm_medium=readme&utm_campaign=course) · [Free lessons across every course](https://systemdrd.com/trial-lessons/?utm_source=github&utm_medium=readme&utm_campaign=course)
